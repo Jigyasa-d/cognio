@@ -1,0 +1,6 @@
+{
+  "status": "success",
+  "model_path": "/Users/jigyasa/Vscode-me/cognio/ml/models/xgb_full.joblib",
+  "macro_f1": 1.0,
+  "rows_used": 1500
+}
