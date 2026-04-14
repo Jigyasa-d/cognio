@@ -1,0 +1,8 @@
+.DS_Store
+.venv/
+.vscode/
+__pycache__/
+*.pyc
+
+ml/.venv/
+ml/data/raw/KT1/
