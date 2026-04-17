@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from app.schemas.events import EventRequest
 from app.models.db import SessionLocal
 from app.models.event import Event
+from app.services.ml_client import predict_strain
 
 router = APIRouter()
 
@@ -26,4 +27,15 @@ def receive_event(data: EventRequest):
     db.commit()
     db.close()
 
-    return {"stored": True}
+    # 🔴 ML prediction
+    prediction = predict_strain({
+        "latency_delta": data.features.latency_delta,
+        "error_rate": data.features.error_rate,
+        "attempt_burst": data.features.attempt_burst,
+        "hint_reliance": data.features.hint_reliance
+    })
+
+    return {
+        "stored": True,
+        "prediction": prediction
+    }
