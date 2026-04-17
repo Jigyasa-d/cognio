@@ -1,69 +1,118 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import List
 
 import numpy as np
 import pandas as pd
 
 
-def generate_session(strain_level: str = "HIGH", n_rows: int = 200) -> pd.DataFrame:
-    rows = []
+def _generate_one_group(
+    student_id: str,
+    content_id: str,
+    strain_level: str,
+    n_events: int = 10,
+    seed: int | None = None,
+) -> pd.DataFrame:
+    rng = np.random.default_rng(seed)
+    rows: List[dict] = []
 
-    for _ in range(n_rows):
+    timestamp = 0
+
+    for i in range(n_events):
         if strain_level.upper() == "HIGH":
-            row = {
-                "latency_delta": max(0, np.random.normal(8000, 2000)),
-                "error_rate": np.random.uniform(0.65, 1.0),
-                "attempt_burst": 1,
-                "attention_drop": np.random.choice([0, 1], p=[0.2, 0.8]),
-                "hint_reliance": np.random.uniform(0.5, 1.0),
-                "cold_start_latency": max(0, np.random.normal(6000, 1500)),
-                "exit_flag_ratio": np.random.uniform(0.2, 0.8),
-                "reread_normalized": np.random.uniform(1.0, 3.0),
-                "strain_level": "HIGH",
-            }
+            time_taken_ms = max(500, int(rng.normal(8500, 1800)))
+            correct = int(rng.choice([0, 1], p=[0.75, 0.25]))
+            scroll_depth = max(0, min(100, int(rng.normal(40, 20))))
+            hint_count = int(rng.integers(1, 4))
+            reread_count = int(rng.integers(1, 5))
+            exit_flag = int(rng.choice([0, 1], p=[0.65, 0.35]))
+            gap_ms = int(rng.integers(5000, 30000))
+            content_length_words = int(rng.integers(250, 500))
+
         elif strain_level.upper() == "MODERATE":
-            row = {
-                "latency_delta": max(0, np.random.normal(4500, 1200)),
-                "error_rate": np.random.uniform(0.35, 0.6),
-                "attempt_burst": np.random.choice([0, 1], p=[0.6, 0.4]),
-                "attention_drop": np.random.choice([0, 1], p=[0.5, 0.5]),
-                "hint_reliance": np.random.uniform(0.2, 0.6),
-                "cold_start_latency": max(0, np.random.normal(3500, 1000)),
-                "exit_flag_ratio": np.random.uniform(0.05, 0.3),
-                "reread_normalized": np.random.uniform(0.4, 1.2),
-                "strain_level": "MODERATE",
-            }
+            time_taken_ms = max(500, int(rng.normal(4500, 1200)))
+            correct = int(rng.choice([0, 1], p=[0.45, 0.55]))
+            scroll_depth = max(0, min(100, int(rng.normal(65, 18))))
+            hint_count = int(rng.integers(0, 3))
+            reread_count = int(rng.integers(0, 3))
+            exit_flag = int(rng.choice([0, 1], p=[0.85, 0.15]))
+            gap_ms = int(rng.integers(10000, 40000))
+            content_length_words = int(rng.integers(250, 500))
+
         else:
-            row = {
-                "latency_delta": max(0, np.random.normal(1200, 500)),
-                "error_rate": np.random.uniform(0.0, 0.3),
-                "attempt_burst": 0,
-                "attention_drop": np.random.choice([0, 1], p=[0.85, 0.15]),
-                "hint_reliance": np.random.uniform(0.0, 0.2),
-                "cold_start_latency": max(0, np.random.normal(1500, 500)),
-                "exit_flag_ratio": np.random.uniform(0.0, 0.1),
-                "reread_normalized": np.random.uniform(0.0, 0.5),
-                "strain_level": "LOW",
+            time_taken_ms = max(500, int(rng.normal(1800, 500)))
+            correct = int(rng.choice([0, 1], p=[0.15, 0.85]))
+            scroll_depth = max(0, min(100, int(rng.normal(85, 10))))
+            hint_count = int(rng.integers(0, 2))
+            reread_count = int(rng.integers(0, 2))
+            exit_flag = int(rng.choice([0, 1], p=[0.95, 0.05]))
+            gap_ms = int(rng.integers(15000, 50000))
+            content_length_words = int(rng.integers(250, 500))
+
+        timestamp += gap_ms
+
+        rows.append(
+            {
+                "student_id": student_id,
+                "content_id": content_id,
+                "timestamp": timestamp,
+                "time_taken_ms": time_taken_ms,
+                "correct": correct,
+                "scroll_depth": scroll_depth,
+                "hint_count": hint_count,
+                "reread_count": reread_count,
+                "exit_flag": exit_flag,
+                "content_length_words": content_length_words,
+                "synthetic_strain": strain_level.upper(),
+                "event_index": i,
             }
-        rows.append(row)
+        )
 
     return pd.DataFrame(rows)
 
 
-def generate_dataset(per_class: int = 300) -> pd.DataFrame:
-    df = pd.concat(
-        [
-            generate_session("LOW", per_class),
-            generate_session("MODERATE", per_class),
-            generate_session("HIGH", per_class),
-        ],
-        ignore_index=True,
-    )
-    return df.sample(frac=1, random_state=42).reset_index(drop=True)
+def generate_synthetic_events(
+    per_class_groups: int = 50,
+    events_per_group: int = 10,
+    seed: int = 42,
+) -> pd.DataFrame:
+    rng = np.random.default_rng(seed)
+    all_groups = []
+    group_counter = 0
+
+    for label in ["LOW", "MODERATE", "HIGH"]:
+        for _ in range(per_class_groups):
+            group_counter += 1
+            student_id = f"syn_student_{group_counter:04d}"
+            content_id = f"syn_content_{int(rng.integers(1, 15)):03d}"
+
+            group_df = _generate_one_group(
+                student_id=student_id,
+                content_id=content_id,
+                strain_level=label,
+                n_events=events_per_group,
+                seed=int(rng.integers(0, 1_000_000)),
+            )
+            all_groups.append(group_df)
+
+    return pd.concat(all_groups, ignore_index=True)
+
+
+def main() -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    output_path = project_root / "data" / "raw" / "synthetic_events.csv"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    df = generate_synthetic_events(per_class_groups=50, events_per_group=10, seed=42)
+    df.to_csv(output_path, index=False)
+
+    print(f"Saved synthetic events to: {output_path}")
+    print(df.head())
+    print("\nShape:", df.shape)
+    print("\nSynthetic label counts:")
+    print(df["synthetic_strain"].value_counts())
 
 
 if __name__ == "__main__":
-    df = generate_dataset()
-    print(df.head())
-    print(df["strain_level"].value_counts())
+    main()
