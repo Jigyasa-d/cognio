@@ -1,24 +1,30 @@
 # XGBoost Evaluation Report
 
-Training rows used: 11
+Training rows used: 188
 
-Train split rows: 8
+Unique users: 187
 
-Test split rows: 3
+Train split rows: 150
 
-Macro F1: 0.5556
+Test split rows: 38
+
+Train users: 149
+
+Test users: 38
+
+Macro F1: 0.9475
 
 ## Classification Report
 
 ```
               precision    recall  f1-score   support
 
-         LOW     0.5000    1.0000    0.6667         1
-    MODERATE     0.0000    0.0000    0.0000         1
-        HIGH     1.0000    1.0000    1.0000         1
+         LOW     1.0000    0.9286    0.9630        14
+    MODERATE     0.8571    1.0000    0.9231        12
+        HIGH     1.0000    0.9167    0.9565        12
 
-    accuracy                         0.6667         3
-   macro avg     0.5000    0.6667    0.5556         3
-weighted avg     0.5000    0.6667    0.5556         3
+    accuracy                         0.9474        38
+   macro avg     0.9524    0.9484    0.9475        38
+weighted avg     0.9549    0.9474    0.9483        38
 
 ```
