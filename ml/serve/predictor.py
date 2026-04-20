@@ -5,39 +5,141 @@ from typing import Dict, List
 
 import joblib
 import numpy as np
-
-from src.feature_engineering import FEATURE_COLUMNS
+import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_PATH = ROOT / "models" / "xgb_full.joblib"
-
-LABELS = ["LOW", "MODERATE", "HIGH"]
 
 
 class CognioPredictor:
     def __init__(self, model_path: Path = MODEL_PATH):
         if not model_path.exists():
             raise FileNotFoundError(f"Model not found at {model_path}. Run retrain.py first.")
-        self.model = joblib.load(model_path)
 
-    def predict(self, features: Dict[str, float]) -> Dict:
-        x = np.array([[float(features.get(col, 0.0)) for col in FEATURE_COLUMNS]])
-        probs = self.model.predict_proba(x)[0]
+        artifact = joblib.load(model_path)
+
+        if not isinstance(artifact, dict) or "model" not in artifact or "feature_columns" not in artifact:
+            raise ValueError("Saved model artifact format is invalid.")
+
+        self.model = artifact["model"]
+        self.feature_columns: List[str] = artifact["feature_columns"]
+        self.inverse_label_map: Dict[int, str] = {
+            int(k): v for k, v in artifact.get(
+                "inverse_label_map",
+                {0: "LOW", 1: "MODERATE", 2: "HIGH"},
+            ).items()
+        }
+
+    def _adapt_live_to_training_features(self, live_features: Dict[str, float]) -> Dict[str, float]:
+        latency_delta = float(live_features.get("latency_delta", 0.0))
+        error_rate = float(live_features.get("error_rate", 0.0))
+        attempt_burst = float(live_features.get("attempt_burst", 0.0))
+        attention_drop = float(live_features.get("attention_drop", 0.0))
+        hint_reliance = float(live_features.get("hint_reliance", 0.0))
+        cold_start_latency = float(live_features.get("cold_start_latency", 0.0))
+        exit_flag_ratio = float(live_features.get("exit_flag_ratio", 0.0))
+        reread_normalized = float(live_features.get("reread_normalized", 0.0))
+
+        # proxy mapping from online/live features -> offline training features
+        n_interactions = 5.0
+        accuracy = max(0.0, min(1.0, 1.0 - error_rate))
+        accuracy_pct = accuracy * 100.0
+
+        avg_elapsed_time = max(0.0, cold_start_latency / 1000.0)
+        median_elapsed_time = max(0.0, avg_elapsed_time * 0.9)
+        std_elapsed_time = max(0.0, latency_delta / 1000.0)
+        p90_elapsed_time = max(avg_elapsed_time, avg_elapsed_time + std_elapsed_time)
+
+        long_response_rate = max(0.0, min(1.0, attention_drop * 0.4 + attempt_burst * 0.6))
+        retry_rate = max(0.0, min(1.0, attempt_burst * 0.7 + hint_reliance * 0.3))
+        wrong_streak_max = max(0.0, min(5.0, round(error_rate * 5)))
+
+        strain_score = max(
+            0.0,
+            min(
+                1.0,
+                0.28 * error_rate
+                + 0.16 * min(std_elapsed_time / 10.0, 1.0)
+                + 0.14 * retry_rate
+                + 0.12 * long_response_rate
+                + 0.10 * hint_reliance
+                + 0.10 * reread_normalized
+                + 0.10 * exit_flag_ratio,
+            ),
+        )
+
+        eps = 1e-6
+        efficiency_score = accuracy / (avg_elapsed_time + eps)
+        error_burden = error_rate * n_interactions
+        retry_burden = retry_rate * n_interactions
+        time_pressure_index = avg_elapsed_time * error_rate
+        struggle_index = (
+            0.35 * error_rate
+            + 0.20 * retry_rate
+            + 0.15 * long_response_rate
+            + 0.15 * (wrong_streak_max / (n_interactions + eps))
+            + 0.15 * strain_score
+        )
+        consistency_index = 1.0 / (1.0 + std_elapsed_time)
+        pace_ratio = p90_elapsed_time / (median_elapsed_time + eps)
+        elapsed_range_proxy = p90_elapsed_time - median_elapsed_time
+
+        return {
+            "n_interactions": n_interactions,
+            "accuracy": accuracy,
+            "accuracy_pct": accuracy_pct,
+            "incorrect_rate": error_rate,
+            "avg_elapsed_time": avg_elapsed_time,
+            "median_elapsed_time": median_elapsed_time,
+            "std_elapsed_time": std_elapsed_time,
+            "p90_elapsed_time": p90_elapsed_time,
+            "long_response_rate": long_response_rate,
+            "retry_rate": retry_rate,
+            "wrong_streak_max": wrong_streak_max,
+            "strain_score": strain_score,
+            "efficiency_score": efficiency_score,
+            "error_burden": error_burden,
+            "retry_burden": retry_burden,
+            "time_pressure_index": time_pressure_index,
+            "struggle_index": struggle_index,
+            "consistency_index": consistency_index,
+            "pace_ratio": pace_ratio,
+            "elapsed_range_proxy": elapsed_range_proxy,
+        }
+
+    def predict(self, live_features: Dict[str, float]) -> Dict:
+        adapted = self._adapt_live_to_training_features(live_features)
+
+        row = {col: float(adapted.get(col, 0.0)) for col in self.feature_columns}
+        x_df = pd.DataFrame([row], columns=self.feature_columns)
+
+        probs = self.model.predict_proba(x_df)[0]
         pred_idx = int(np.argmax(probs))
         confidence = float(probs[pred_idx])
-        strain_level = LABELS[pred_idx]
+        strain_level = self.inverse_label_map[pred_idx]
 
-        feature_pairs = list(zip(FEATURE_COLUMNS, x[0]))
-        feature_pairs.sort(key=lambda item: abs(item[1]), reverse=True)
-        top_features: List[str] = [name for name, _ in feature_pairs[:3]]
+        ranked_idx = np.argsort(probs)[::-1]
+        ranked_predictions = [
+            {
+                "strain_level": self.inverse_label_map[int(i)],
+                "probability": round(float(probs[int(i)]), 4),
+            }
+            for i in ranked_idx
+        ]
 
-        if confidence < 0.5:
+        if confidence < 0.50:
             strain_level = "MODERATE"
+
+        trigger_adaptation = strain_level in {"HIGH", "MODERATE"}
+
+        top_features = sorted(adapted.items(), key=lambda item: abs(float(item[1])), reverse=True)[:3]
 
         return {
             "strain_level": strain_level,
             "confidence": round(confidence, 4),
-            "top_features": top_features,
-            "trigger_adaptation": strain_level == "HIGH",
+            "probabilities": ranked_predictions,
+            "trigger_adaptation": trigger_adaptation,
+            "adapted_features_used": adapted,
+            "top_features": [name for name, _ in top_features],
         }

@@ -1,91 +1,81 @@
 from pathlib import Path
 import pandas as pd
-import numpy as np
 
-U_PATH = Path("data/raw/KT1/u1.csv")
-Q_PATH = Path("data/raw/questions.csv")
 
-OUT_PATH = Path("data/raw/kt1_merged.csv")
+ROOT = Path(__file__).resolve().parents[1]
+RAW_DIR = ROOT / "data" / "raw"
+KT1_DIR = RAW_DIR / "KT1"
+QUESTIONS_PATH = RAW_DIR / "questions.csv"
+OUTPUT_PATH = RAW_DIR / "kt1_merged.csv"
+
+USER_FILES = [
+    "u1.csv",
+    "u10.csv",
+    "u100.csv",
+]
+
+
+def pick_column(df: pd.DataFrame, candidates, required=True):
+    for col in candidates:
+        if col in df.columns:
+            return col
+    if required:
+        raise ValueError(
+            f"None of these columns were found: {candidates}\nAvailable columns: {list(df.columns)}"
+        )
+    return None
 
 
 def main():
-    print("Loading u1.csv...")
-    u_df = pd.read_csv(U_PATH, nrows=50000)  # safe limit
+    if not QUESTIONS_PATH.exists():
+        raise FileNotFoundError(f"questions.csv not found at: {QUESTIONS_PATH}")
 
-    print("Loading questions.csv...")
-    q_df = pd.read_csv(Q_PATH)
+    user_dfs = []
 
-    # normalize columns
-    u_df.columns = [c.lower().strip() for c in u_df.columns]
-    q_df.columns = [c.lower().strip() for c in q_df.columns]
+    for filename in USER_FILES:
+        file_path = KT1_DIR / filename
+        if not file_path.exists():
+            raise FileNotFoundError(f"Missing user file: {file_path}")
 
-    print("\nU columns:", u_df.columns.tolist())
-    print("Q columns:", q_df.columns.tolist())
+        print(f"Loading {filename}...")
+        df = pd.read_csv(file_path)
+        print(f"{filename} shape: {df.shape}")
+        print(f"{filename} columns: {df.columns.tolist()}")
+        user_dfs.append(df)
 
-    # --- find correct answer column ---
-    possible_answer_cols = ["correct_answer", "answer", "label", "solution"]
-    answer_col = None
+    print("\nCombining user files...")
+    users_df = pd.concat(user_dfs, ignore_index=True)
+    print(f"Combined user shape: {users_df.shape}")
 
-    for col in possible_answer_cols:
-        if col in q_df.columns:
-            answer_col = col
-            break
+    print("\nLoading questions.csv...")
+    questions_df = pd.read_csv(QUESTIONS_PATH)
+    print(f"questions.csv shape: {questions_df.shape}")
+    print(f"questions.csv columns: {questions_df.columns.tolist()}")
 
-    if answer_col is None:
-        raise ValueError("No correct answer column found in questions.csv")
-
-    print("Using answer column:", answer_col)
-
-    # --- merge ---
-    merged = pd.merge(
-        u_df,
-        q_df[["question_id", answer_col]],
-        on="question_id",
-        how="left"
+    user_join_col = pick_column(
+        users_df,
+        ["content_id", "question_id", "qid", "item_id", "problem_id"],
+    )
+    question_join_col = pick_column(
+        questions_df,
+        ["question_id", "content_id", "qid", "item_id", "problem_id"],
     )
 
-    # --- create correctness ---
-    merged["correct"] = (
-        merged["user_answer"].astype(str).str.strip() ==
-        merged[answer_col].astype(str).str.strip()
-    ).astype(int)
+    print(f"\nMerging users[{user_join_col}] with questions[{question_join_col}] ...")
+    merged_df = users_df.merge(
+        questions_df,
+        left_on=user_join_col,
+        right_on=question_join_col,
+        how="left",
+    )
 
-    # --- build final clean dataset ---
-    clean = pd.DataFrame()
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    merged_df.to_csv(OUTPUT_PATH, index=False)
 
-    clean["student_id"] = merged["solving_id"]  # proxy for user
-    clean["content_id"] = merged["question_id"]
-    clean["correct"] = merged["correct"]
-
-    if "elapsed_time" in merged.columns:
-        clean["time_taken_ms"] = pd.to_numeric(merged["elapsed_time"], errors="coerce")
-    else:
-        clean["time_taken_ms"] = 0
-
-    clean["time_taken_ms"] = clean["time_taken_ms"].fillna(clean["time_taken_ms"].median())
-
-    if "timestamp" in merged.columns:
-        clean["timestamp"] = pd.to_numeric(merged["timestamp"], errors="coerce")
-    else:
-        clean["timestamp"] = np.arange(len(clean))
-
-    # dummy features
-    clean["scroll_depth"] = 100
-    clean["hint_count"] = 0
-    clean["reread_count"] = 0
-    clean["exit_flag"] = 0
-
-    clean = clean.dropna(subset=["student_id", "content_id"]).copy()
-    clean = clean.sort_values(["student_id", "timestamp"]).reset_index(drop=True)
-
-    # save
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    clean.to_csv(OUT_PATH, index=False)
-
-    print("\nSaved merged dataset →", OUT_PATH)
-    print("Shape:", clean.shape)
-    print("\nCorrect distribution:")
-    print(clean["correct"].value_counts())
+    print(f"\nSaved merged file to: {OUTPUT_PATH}")
+    print(f"Shape: {merged_df.shape}")
+    print("\nColumns:")
+    print(merged_df.columns.tolist())
 
 
 if __name__ == "__main__":
