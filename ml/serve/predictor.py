@@ -1,7 +1,4 @@
-from __future__ import annotations
-
 from pathlib import Path
-from typing import Dict, List
 
 import joblib
 import numpy as np
@@ -10,7 +7,36 @@ import shap
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MODEL_PATH = ROOT / "models" / "xgb_full.joblib"
+MODEL_PATH = ROOT / "models" / "rf_prototype.joblib"
+SCALER_PATH = ROOT / "models" / "scaler.joblib"
+
+FEATURE_COLUMNS = [
+    "n_interactions",
+    "accuracy",
+    "accuracy_pct",
+    "incorrect_rate",
+    "avg_elapsed_time",
+    "median_elapsed_time",
+    "std_elapsed_time",
+    "p90_elapsed_time",
+    "long_response_rate",
+    "retry_rate",
+    "wrong_streak_max",
+    "efficiency_score",
+    "error_burden",
+    "retry_burden",
+    "time_pressure_index",
+    "struggle_index",
+    "consistency_index",
+    "pace_ratio",
+    "elapsed_range_proxy",
+]
+
+LABEL_MAP = {
+    0: "LOW",
+    1: "MODERATE",
+    2: "HIGH",
+}
 
 
 class CognioPredictor:
@@ -59,20 +85,6 @@ class CognioPredictor:
         retry_rate = max(0.0, min(1.0, attempt_burst * 0.7 + hint_reliance * 0.3))
         wrong_streak_max = max(0.0, min(5.0, round(error_rate * 5)))
 
-        strain_score = max(
-            0.0,
-            min(
-                1.0,
-                0.28 * error_rate
-                + 0.16 * min(std_elapsed_time / 10.0, 1.0)
-                + 0.14 * retry_rate
-                + 0.12 * long_response_rate
-                + 0.10 * hint_reliance
-                + 0.10 * reread_normalized
-                + 0.10 * exit_flag_ratio,
-            ),
-        )
-
         eps = 1e-6
         efficiency_score = accuracy / (avg_elapsed_time + eps)
         error_burden = error_rate * n_interactions
@@ -84,7 +96,7 @@ class CognioPredictor:
             + 0.20 * retry_rate
             + 0.15 * long_response_rate
             + 0.15 * (wrong_streak_max / (n_interactions + eps))
-            + 0.15 * strain_score
+            + 0.15 * hint_reliance
         )
 
         consistency_index = 1.0 / (1.0 + std_elapsed_time)
@@ -103,7 +115,6 @@ class CognioPredictor:
             "long_response_rate": long_response_rate,
             "retry_rate": retry_rate,
             "wrong_streak_max": wrong_streak_max,
-            "strain_score": strain_score,
             "efficiency_score": efficiency_score,
             "error_burden": error_burden,
             "retry_burden": retry_burden,
@@ -118,10 +129,10 @@ class CognioPredictor:
     def predict(self, live_features: Dict[str, float]) -> Dict:
         adapted = self._adapt_live_to_training_features(live_features)
 
-        row = {col: float(adapted.get(col, 0.0)) for col in self.feature_columns}
-        x_df = pd.DataFrame([row], columns=self.feature_columns)
+        row = pd.DataFrame([[adapted[col] for col in FEATURE_COLUMNS]], columns=FEATURE_COLUMNS)
+        row_scaled = self.scaler.transform(row)
 
-        probs = self.model.predict_proba(x_df)[0]
+        probs = self.model.predict_proba(row_scaled)[0]
         pred_idx = int(np.argmax(probs))
         confidence = float(probs[pred_idx])
         strain_level = self.inverse_label_map[pred_idx]
