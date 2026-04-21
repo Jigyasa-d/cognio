@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Dict
-
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
-from serve.predictor import CognioPredictor
-app = FastAPI(title="Cognio ML Service", version="1.0.0")
+from ml.serve.predictor import CognioPredictor
+
+
+app = FastAPI(title="Cognio ML Service", version="2.0.0")
 predictor = None
 
 
@@ -41,4 +41,8 @@ def health():
 @app.post("/ml/predict")
 def ml_predict(payload: PredictRequest):
     result = predictor.predict(payload.features.model_dump())
-    return result
+    return {
+        "student_id": payload.student_id,
+        "content_id": payload.content_id,
+        **result,
+    }

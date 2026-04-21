@@ -1,6 +1,37 @@
 {
   "status": "success",
-  "model_path": "/Users/jigyasa/Vscode-me/cognio/ml/models/xgb_full.joblib",
-  "macro_f1": 1.0,
-  "rows_used": 1500
+  "model_path": "C:\\Users\\SAMARTH\\cognio\\ml\\models\\xgb_full.joblib",
+  "rows_used": 188,
+  "unique_users": 187,
+  "train_rows": 150,
+  "test_rows": 38,
+  "train_users": 149,
+  "test_users": 38,
+  "macro_f1": 0.9475,
+  "feature_columns": [
+    "n_interactions",
+    "accuracy",
+    "accuracy_pct",
+    "incorrect_rate",
+    "avg_elapsed_time",
+    "median_elapsed_time",
+    "std_elapsed_time",
+    "p90_elapsed_time",
+    "long_response_rate",
+    "retry_rate",
+    "wrong_streak_max",
+    "efficiency_score",
+    "error_burden",
+    "retry_burden",
+    "time_pressure_index",
+    "struggle_index",
+    "consistency_index",
+    "pace_ratio",
+    "elapsed_range_proxy"
+  ],
+  "class_distribution": {
+    "HIGH": 63,
+    "LOW": 63,
+    "MODERATE": 62
+  }
 }
