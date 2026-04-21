@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
-from serve.predictor import CognioPredictor
+from ml.serve.predictor import CognioPredictor
 
 
 app = FastAPI(title="Cognio ML Service", version="2.0.0")
