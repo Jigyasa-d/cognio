@@ -3,6 +3,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+import shap
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,16 +40,29 @@ LABEL_MAP = {
 
 
 class CognioPredictor:
-    def __init__(self):
-        if not MODEL_PATH.exists():
-            raise FileNotFoundError(f"Missing model: {MODEL_PATH}")
-        if not SCALER_PATH.exists():
-            raise FileNotFoundError(f"Missing scaler: {SCALER_PATH}")
+    def __init__(self, model_path: Path = MODEL_PATH):
+        if not model_path.exists():
+            raise FileNotFoundError(f"Model not found at {model_path}. Run retrain.py first.")
 
-        self.model = joblib.load(MODEL_PATH)
-        self.scaler = joblib.load(SCALER_PATH)
+        artifact = joblib.load(model_path)
 
-    def _adapt_live_to_training_features(self, live_features: dict) -> dict:
+        if not isinstance(artifact, dict) or "model" not in artifact or "feature_columns" not in artifact:
+            raise ValueError("Saved model artifact format is invalid.")
+
+        self.model = artifact["model"]
+        self.feature_columns: List[str] = artifact["feature_columns"]
+
+        self.inverse_label_map: Dict[int, str] = {
+            int(k): v for k, v in artifact.get(
+                "inverse_label_map",
+                {0: "LOW", 1: "MODERATE", 2: "HIGH"},
+            ).items()
+        }
+
+        self.explainer = shap.TreeExplainer(self.model)
+
+    # ---------------- FEATURE ADAPTER ---------------- #
+    def _adapt_live_to_training_features(self, live_features: Dict[str, float]) -> Dict[str, float]:
         latency_delta = float(live_features.get("latency_delta", 0.0))
         error_rate = float(live_features.get("error_rate", 0.0))
         attempt_burst = float(live_features.get("attempt_burst", 0.0))
@@ -111,7 +125,8 @@ class CognioPredictor:
             "elapsed_range_proxy": elapsed_range_proxy,
         }
 
-    def predict(self, live_features: dict) -> dict:
+    # ---------------- PREDICTION ---------------- #
+    def predict(self, live_features: Dict[str, float]) -> Dict:
         adapted = self._adapt_live_to_training_features(live_features)
 
         row = pd.DataFrame([[adapted[col] for col in FEATURE_COLUMNS]], columns=FEATURE_COLUMNS)
@@ -120,21 +135,64 @@ class CognioPredictor:
         probs = self.model.predict_proba(row_scaled)[0]
         pred_idx = int(np.argmax(probs))
         confidence = float(probs[pred_idx])
-        strain_level = LABEL_MAP[pred_idx]
+        strain_level = self.inverse_label_map[pred_idx]
 
-        if confidence < 0.5:
+        # ---------------- CALIBRATION ---------------- #
+
+        # LOW confidence → MODERATE
+        if confidence < 0.55:
             strain_level = "MODERATE"
 
-        importances = self.model.feature_importances_
-        contribution_scores = np.abs(importances * row_scaled[0])
-        top_idx = np.argsort(contribution_scores)[::-1][:3]
-        top_features = [FEATURE_COLUMNS[i] for i in top_idx]
+        # HIGH override
+        if adapted["incorrect_rate"] > 0.7 and adapted["avg_elapsed_time"] > 5:
+            strain_level = "HIGH"
+
+        # MODERATE ZONE (FIXED)
+        elif (
+            0.25 < adapted["incorrect_rate"] <= 0.7
+            or 3 < adapted["avg_elapsed_time"] <= 6
+            or adapted["retry_rate"] > 0.3
+        ):
+            strain_level = "MODERATE"
+
+        # ---------------- EXPLANATION ---------------- #
+        try:
+            shap_values = self.explainer.shap_values(x_df)
+
+            if isinstance(shap_values, list):
+                shap_vals = shap_values[pred_idx][0]
+            else:
+                shap_vals = shap_values[0]
+
+            feature_importance = dict(zip(self.feature_columns, shap_vals))
+
+            top_features = sorted(
+                feature_importance.items(),
+                key=lambda x: abs(x[1]),
+                reverse=True
+            )[:3]
+
+            top_features = [f[0] for f in top_features]
+
+        except Exception:
+            top_features = sorted(
+                {
+                    "error_rate": adapted["incorrect_rate"],
+                    "avg_elapsed_time": adapted["avg_elapsed_time"],
+                    "retry_rate": adapted["retry_rate"],
+                    "hint_reliance": live_features.get("hint_reliance", 0),
+                }.items(),
+                key=lambda x: abs(x[1]),
+                reverse=True
+            )[:3]
+
+            top_features = [f[0] for f in top_features]
 
         trigger_adaptation = strain_level in {"HIGH", "MODERATE"}
 
         return {
             "strain_level": strain_level,
             "confidence": round(confidence, 4),
-            "top_features": top_features,
             "trigger_adaptation": trigger_adaptation,
+            "top_features": top_features
         }

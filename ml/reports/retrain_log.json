@@ -1,6 +1,6 @@
 {
   "status": "success",
-  "model_path": "/Users/jigyasa/Vscode-me/cognio/ml/models/xgb_full.joblib",
+  "model_path": "C:\\Users\\SAMARTH\\cognio\\ml\\models\\xgb_full.joblib",
   "rows_used": 188,
   "unique_users": 187,
   "train_rows": 150,
