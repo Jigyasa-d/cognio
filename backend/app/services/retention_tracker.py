@@ -1,15 +1,19 @@
-from collections import defaultdict
+import time
 from app.models.retention import RetentionEvent
 from app.models.db import SessionLocal
 
-# in-memory tracking (acts like Redis for now)
-tracking_state = defaultdict(dict)
+# -------- In-memory store (Redis-like simulation) -------- #
+tracking_state = {}
+
+# expire tracking after 10 minutes
+TTL_SECONDS = 600
 
 
 def start_tracking(student_id, content_id, pre_accuracy):
     tracking_state[(student_id, content_id)] = {
         "pre_accuracy": pre_accuracy,
-        "post_scores": []
+        "post_scores": [],
+        "created_at": time.time()
     }
 
 
@@ -19,9 +23,17 @@ def record_post_event(student_id, content_id, score):
     if key not in tracking_state:
         return None
 
-    tracking_state[key]["post_scores"].append(score)
+    data = tracking_state[key]
 
-    if len(tracking_state[key]["post_scores"]) == 3:
+    # -------- TTL CHECK (simulate Redis expiry) -------- #
+    if time.time() - data["created_at"] > TTL_SECONDS:
+        del tracking_state[key]
+        return None
+
+    # -------- ADD SCORE -------- #
+    data["post_scores"].append(score)
+
+    if len(data["post_scores"]) == 3:
         return finalize_tracking(student_id, content_id)
 
     return None
@@ -32,12 +44,13 @@ def finalize_tracking(student_id, content_id):
     data = tracking_state[key]
 
     pre = data["pre_accuracy"]
-    post_avg = sum(data["post_scores"]) / 3
+    post_avg = sum(data["post_scores"]) / len(data["post_scores"])
     delta = post_avg - pre
 
     flagged = delta < 0
 
     db = SessionLocal()
+
     event = RetentionEvent(
         student_id=student_id,
         content_id=content_id,
@@ -51,6 +64,7 @@ def finalize_tracking(student_id, content_id):
     db.commit()
     db.close()
 
+    # -------- CLEANUP -------- #
     del tracking_state[key]
 
     return {
