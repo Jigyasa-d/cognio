@@ -1,42 +1,17 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Dict, List
 
 import joblib
 import numpy as np
 import pandas as pd
-import shap
+
+from src.shap_explainer import get_top_features
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MODEL_PATH = ROOT / "models" / "rf_prototype.joblib"
-SCALER_PATH = ROOT / "models" / "scaler.joblib"
-
-FEATURE_COLUMNS = [
-    "n_interactions",
-    "accuracy",
-    "accuracy_pct",
-    "incorrect_rate",
-    "avg_elapsed_time",
-    "median_elapsed_time",
-    "std_elapsed_time",
-    "p90_elapsed_time",
-    "long_response_rate",
-    "retry_rate",
-    "wrong_streak_max",
-    "efficiency_score",
-    "error_burden",
-    "retry_burden",
-    "time_pressure_index",
-    "struggle_index",
-    "consistency_index",
-    "pace_ratio",
-    "elapsed_range_proxy",
-]
-
-LABEL_MAP = {
-    0: "LOW",
-    1: "MODERATE",
-    2: "HIGH",
-}
+MODEL_PATH = ROOT / "models" / "xgb_full.joblib"
 
 
 class CognioPredictor:
@@ -47,7 +22,7 @@ class CognioPredictor:
         artifact = joblib.load(model_path)
 
         if not isinstance(artifact, dict) or "model" not in artifact or "feature_columns" not in artifact:
-            raise ValueError("Saved model artifact format is invalid.")
+            raise ValueError("Saved XGBoost artifact format is invalid.")
 
         self.model = artifact["model"]
         self.feature_columns: List[str] = artifact["feature_columns"]
@@ -59,9 +34,6 @@ class CognioPredictor:
             ).items()
         }
 
-        self.explainer = shap.TreeExplainer(self.model)
-
-    # ---------------- FEATURE ADAPTER ---------------- #
     def _adapt_live_to_training_features(self, live_features: Dict[str, float]) -> Dict[str, float]:
         latency_delta = float(live_features.get("latency_delta", 0.0))
         error_rate = float(live_features.get("error_rate", 0.0))
@@ -90,7 +62,6 @@ class CognioPredictor:
         error_burden = error_rate * n_interactions
         retry_burden = retry_rate * n_interactions
         time_pressure_index = avg_elapsed_time * error_rate
-
         struggle_index = (
             0.35 * error_rate
             + 0.20 * retry_rate
@@ -98,7 +69,6 @@ class CognioPredictor:
             + 0.15 * (wrong_streak_max / (n_interactions + eps))
             + 0.15 * hint_reliance
         )
-
         consistency_index = 1.0 / (1.0 + std_elapsed_time)
         pace_ratio = p90_elapsed_time / (median_elapsed_time + eps)
         elapsed_range_proxy = p90_elapsed_time - median_elapsed_time
@@ -125,74 +95,32 @@ class CognioPredictor:
             "elapsed_range_proxy": elapsed_range_proxy,
         }
 
-    # ---------------- PREDICTION ---------------- #
     def predict(self, live_features: Dict[str, float]) -> Dict:
         adapted = self._adapt_live_to_training_features(live_features)
 
-        row = pd.DataFrame([[adapted[col] for col in FEATURE_COLUMNS]], columns=FEATURE_COLUMNS)
-        row_scaled = self.scaler.transform(row)
+        input_df = pd.DataFrame(
+            [[adapted[col] for col in self.feature_columns]],
+            columns=self.feature_columns,
+        )
 
-        probs = self.model.predict_proba(row_scaled)[0]
+        probs = self.model.predict_proba(input_df)[0]
         pred_idx = int(np.argmax(probs))
         confidence = float(probs[pred_idx])
         strain_level = self.inverse_label_map[pred_idx]
 
-        # ---------------- CALIBRATION ---------------- #
-
-        # LOW confidence → MODERATE
-        if confidence < 0.55:
+        if confidence < 0.50:
             strain_level = "MODERATE"
 
-        # HIGH override
-        if adapted["incorrect_rate"] > 0.7 and adapted["avg_elapsed_time"] > 5:
-            strain_level = "HIGH"
-
-        # MODERATE ZONE (FIXED)
-        elif (
-            0.25 < adapted["incorrect_rate"] <= 0.7
-            or 3 < adapted["avg_elapsed_time"] <= 6
-            or adapted["retry_rate"] > 0.3
-        ):
-            strain_level = "MODERATE"
-
-        # ---------------- EXPLANATION ---------------- #
-        try:
-            shap_values = self.explainer.shap_values(x_df)
-
-            if isinstance(shap_values, list):
-                shap_vals = shap_values[pred_idx][0]
-            else:
-                shap_vals = shap_values[0]
-
-            feature_importance = dict(zip(self.feature_columns, shap_vals))
-
-            top_features = sorted(
-                feature_importance.items(),
-                key=lambda x: abs(x[1]),
-                reverse=True
-            )[:3]
-
-            top_features = [f[0] for f in top_features]
-
-        except Exception:
-            top_features = sorted(
-                {
-                    "error_rate": adapted["incorrect_rate"],
-                    "avg_elapsed_time": adapted["avg_elapsed_time"],
-                    "retry_rate": adapted["retry_rate"],
-                    "hint_reliance": live_features.get("hint_reliance", 0),
-                }.items(),
-                key=lambda x: abs(x[1]),
-                reverse=True
-            )[:3]
-
-            top_features = [f[0] for f in top_features]
-
-        trigger_adaptation = strain_level in {"HIGH", "MODERATE"}
+        top_features = get_top_features(
+            model=self.model,
+            input_df=input_df,
+            feature_columns=self.feature_columns,
+            top_k=3,
+        )
 
         return {
             "strain_level": strain_level,
             "confidence": round(confidence, 4),
-            "trigger_adaptation": trigger_adaptation,
-            "top_features": top_features
+            "top_features": top_features,
+            "trigger_adaptation": strain_level in {"HIGH", "MODERATE"},
         }
