@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from flask import Flask, jsonify, request
+from serve.predictor import CognioPredictor
 
-try:
-    from ml.serve.predictor import CognioPredictor
-except ImportError:
-    from predictor import CognioPredictor
-
-from ml.serve.predictor import CognioPredictor
 
 app = Flask(__name__)
 predictor = CognioPredictor()
+
+
+@app.get("/")
+def root():
+    return jsonify({"message": "Cognio ML service running"})
 
 
 @app.get("/health")

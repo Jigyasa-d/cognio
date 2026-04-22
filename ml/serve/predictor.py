@@ -7,10 +7,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-try:
-    from ml.src.shap_explainer import get_top_features
-except ImportError:
-    from src.shap_explainer import get_top_features
+from src.shap_explainer import get_top_features
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,7 +22,7 @@ class CognioPredictor:
         artifact = joblib.load(model_path)
 
         if not isinstance(artifact, dict) or "model" not in artifact or "feature_columns" not in artifact:
-            raise ValueError("Saved model artifact format is invalid.")
+            raise ValueError("Saved XGBoost artifact format is invalid.")
 
         self.model = artifact["model"]
         self.feature_columns: List[str] = artifact["feature_columns"]
@@ -37,9 +34,6 @@ class CognioPredictor:
             ).items()
         }
 
-        self.explainer = shap.TreeExplainer(self.model)
-
-    # ---------------- FEATURE ADAPTER ---------------- #
     def _adapt_live_to_training_features(self, live_features: Dict[str, float]) -> Dict[str, float]:
         latency_delta = float(live_features.get("latency_delta", 0.0))
         error_rate = float(live_features.get("error_rate", 0.0))
@@ -101,7 +95,6 @@ class CognioPredictor:
             "elapsed_range_proxy": elapsed_range_proxy,
         }
 
-    # ---------------- PREDICTION ---------------- #
     def predict(self, live_features: Dict[str, float]) -> Dict:
         adapted = self._adapt_live_to_training_features(live_features)
 
@@ -115,62 +108,19 @@ class CognioPredictor:
         confidence = float(probs[pred_idx])
         strain_level = self.inverse_label_map[pred_idx]
 
-        # ---------------- CALIBRATION ---------------- #
-
-        # LOW confidence → MODERATE
-        if confidence < 0.55:
+        if confidence < 0.50:
             strain_level = "MODERATE"
 
-        # HIGH override
-        if adapted["incorrect_rate"] > 0.7 and adapted["avg_elapsed_time"] > 5:
-            strain_level = "HIGH"
-
-        # MODERATE ZONE (FIXED)
-        elif (
-            0.25 < adapted["incorrect_rate"] <= 0.7
-            or 3 < adapted["avg_elapsed_time"] <= 6
-            or adapted["retry_rate"] > 0.3
-        ):
-            strain_level = "MODERATE"
-
-        # ---------------- EXPLANATION ---------------- #
-        try:
-            shap_values = self.explainer.shap_values(x_df)
-
-            if isinstance(shap_values, list):
-                shap_vals = shap_values[pred_idx][0]
-            else:
-                shap_vals = shap_values[0]
-
-            feature_importance = dict(zip(self.feature_columns, shap_vals))
-
-            top_features = sorted(
-                feature_importance.items(),
-                key=lambda x: abs(x[1]),
-                reverse=True
-            )[:3]
-
-            top_features = [f[0] for f in top_features]
-
-        except Exception:
-            top_features = sorted(
-                {
-                    "error_rate": adapted["incorrect_rate"],
-                    "avg_elapsed_time": adapted["avg_elapsed_time"],
-                    "retry_rate": adapted["retry_rate"],
-                    "hint_reliance": live_features.get("hint_reliance", 0),
-                }.items(),
-                key=lambda x: abs(x[1]),
-                reverse=True
-            )[:3]
-
-            top_features = [f[0] for f in top_features]
-
-        trigger_adaptation = strain_level in {"HIGH", "MODERATE"}
+        top_features = get_top_features(
+            model=self.model,
+            input_df=input_df,
+            feature_columns=self.feature_columns,
+            top_k=3,
+        )
 
         return {
             "strain_level": strain_level,
             "confidence": round(confidence, 4),
-            "trigger_adaptation": trigger_adaptation,
-            "top_features": top_features
+            "top_features": top_features,
+            "trigger_adaptation": strain_level in {"HIGH", "MODERATE"},
         }
