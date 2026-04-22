@@ -14,21 +14,21 @@ Test users: 38
 
 Macro F1: 0.9475
 
-AUC-ROC (OVR): 0.9855
+AUC-ROC (OVR): 0.9927
 
 ## Best Optuna Parameters
 
 ```json
 {
-  "n_estimators": 231,
+  "n_estimators": 148,
   "max_depth": 7,
-  "learning_rate": 0.016020256374242915,
-  "subsample": 0.9797695913447781,
-  "colsample_bytree": 0.9292103792681419,
-  "min_child_weight": 6,
-  "gamma": 2.3340446988016046,
-  "reg_alpha": 2.2422946495762632,
-  "reg_lambda": 1.7005101001006604
+  "learning_rate": 0.08138548782952389,
+  "subsample": 0.9829448859107618,
+  "colsample_bytree": 0.829552673481714,
+  "min_child_weight": 7,
+  "gamma": 0.04351153838259225,
+  "reg_alpha": 1.9491693341284133,
+  "reg_lambda": 2.007055006281302
 }
 ```
 
