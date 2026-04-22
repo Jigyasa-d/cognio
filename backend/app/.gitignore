@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Database
+cognio.db
+
+# Env
+.env
+
+# OS
+.DS_Store
+Thumbs.db

@@ -7,6 +7,7 @@ try:
 except ImportError:
     from predictor import CognioPredictor
 
+from ml.serve.predictor import CognioPredictor
 
 app = Flask(__name__)
 predictor = CognioPredictor()
