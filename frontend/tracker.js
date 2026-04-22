@@ -5,10 +5,12 @@ let hintsUsed = 0;
 let startTime = Date.now();
 let buffer = [];
 
-// -------- SEND TO BACKEND -------- //
-async function sendEventBatch(features) {
+const BASE_URL = "http://127.0.0.1:8001";
+
+// -------- SEND TO BACKEND (EVENTS ENDPOINT) -------- //
+async function sendEventBatch(events) {
   try {
-    const response = await fetch("http://127.0.0.1:8001/api/v1/adapt", {
+    const response = await fetch(`${BASE_URL}/api/v1/events`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -16,37 +18,40 @@ async function sendEventBatch(features) {
       body: JSON.stringify({
         student_id: "STU_DEMO",
         content_id: "UNIT_DEMO",
-        features: features
+        events: events   // batch of events
       })
     });
 
     const data = await response.json();
 
-    console.log("ADAPT RESPONSE:", data);
+    console.log("EVENT RESPONSE:", data);
 
-    // show overlay if available
-    if (window.showOverlay) {
+    // If adapt response is forwarded, show overlay
+    if (data && data.adaptation && window.showOverlay) {
       window.showOverlay(data.adaptation);
     }
 
   } catch (error) {
-    console.error("Error sending event:", error);
+    console.error("Error sending event batch:", error);
   }
 }
 
 // -------- BUFFER LOGIC -------- //
 function pushToBuffer(features) {
-  buffer.push(features);
+  buffer.push({
+    timestamp: Date.now(),
+    features: features
+  });
 }
 
-// send latest event every 5 sec
+// -------- SEND EVERY 30 SECONDS -------- //
 setInterval(() => {
   if (buffer.length > 0) {
-    const latest = buffer[buffer.length - 1];
-    sendEventBatch(latest);
+    sendEventBatch(buffer);
     buffer = [];
   }
-}, 5000);
+}, 30000); // ✅ 30 seconds (PRD requirement)
+
 
 // -------- SIMULATE ANSWER -------- //
 window.submitAnswer = function () {
@@ -72,6 +77,7 @@ window.submitAnswer = function () {
 
   startTime = Date.now();
 };
+
 
 // -------- SIMULATE HINT -------- //
 window.useHint = function () {
