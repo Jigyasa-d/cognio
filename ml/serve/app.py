@@ -1,6 +1,11 @@
+from __future__ import annotations
+
 from flask import Flask, jsonify, request
 
-from predictor import CognioPredictor
+try:
+    from ml.serve.predictor import CognioPredictor
+except ImportError:
+    from predictor import CognioPredictor
 
 
 app = Flask(__name__)

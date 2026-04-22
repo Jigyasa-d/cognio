@@ -4,8 +4,9 @@ import json
 from pathlib import Path
 
 import joblib
+import optuna
 import pandas as pd
-from sklearn.metrics import classification_report, f1_score
+from sklearn.metrics import classification_report, f1_score, roc_auc_score
 from sklearn.model_selection import GroupShuffleSplit
 from xgboost import XGBClassifier
 
@@ -23,7 +24,6 @@ RETRAIN_LOG = REPORTS_DIR / "retrain_log.json"
 LABEL_MAP = {"LOW": 0, "MODERATE": 1, "HIGH": 2}
 INV_LABEL_MAP = {v: k for k, v in LABEL_MAP.items()}
 
-# strain_score removed to reduce label leakage
 TRAINING_FEATURE_COLUMNS = [
     "n_interactions",
     "accuracy",
@@ -50,8 +50,7 @@ TRAINING_FEATURE_COLUMNS = [
 def load_training_data() -> pd.DataFrame:
     if not FEATURES_PATH.exists():
         raise FileNotFoundError(
-            f"Training features not found at {FEATURES_PATH}. "
-            "Run feature_engineering.py first."
+            f"Training features not found at {FEATURES_PATH}. Run feature_engineering.py first."
         )
     return pd.read_parquet(FEATURES_PATH)
 
@@ -63,19 +62,16 @@ def validate_training_frame(df: pd.DataFrame) -> pd.DataFrame:
         raise ValueError(f"Missing required training columns: {missing}")
 
     clean_df = df.dropna(subset=required_cols).copy()
+
     if clean_df.empty:
         raise ValueError("Training dataframe is empty after dropping missing values.")
 
     class_counts = clean_df["target"].value_counts().sort_index()
     if len(class_counts) < 3:
-        raise ValueError(
-            f"Expected 3 classes, found {len(class_counts)} classes: {class_counts.to_dict()}"
-        )
+        raise ValueError(f"Expected 3 classes, found {len(class_counts)} classes: {class_counts.to_dict()}")
 
     if (class_counts < 2).any():
-        raise ValueError(
-            f"Each class needs at least 2 rows. Found: {class_counts.to_dict()}"
-        )
+        raise ValueError(f"Each class needs at least 2 rows. Found: {class_counts.to_dict()}")
 
     if clean_df["user_id"].nunique() < 2:
         raise ValueError("Need at least 2 unique users for user-level train/test split.")
@@ -113,6 +109,25 @@ def group_train_test_split(
     return train_df, test_df
 
 
+def build_model(trial: optuna.Trial) -> XGBClassifier:
+    return XGBClassifier(
+        n_estimators=trial.suggest_int("n_estimators", 80, 300),
+        max_depth=trial.suggest_int("max_depth", 3, 8),
+        learning_rate=trial.suggest_float("learning_rate", 0.01, 0.2, log=True),
+        subsample=trial.suggest_float("subsample", 0.7, 1.0),
+        colsample_bytree=trial.suggest_float("colsample_bytree", 0.7, 1.0),
+        min_child_weight=trial.suggest_int("min_child_weight", 1, 8),
+        gamma=trial.suggest_float("gamma", 0.0, 3.0),
+        reg_alpha=trial.suggest_float("reg_alpha", 0.0, 3.0),
+        reg_lambda=trial.suggest_float("reg_lambda", 0.5, 5.0),
+        objective="multi:softprob",
+        num_class=3,
+        eval_metric="mlogloss",
+        random_state=42,
+        tree_method="hist",
+    )
+
+
 def train() -> None:
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -140,22 +155,23 @@ def train() -> None:
     print(f"Train users: {train_df['user_id'].nunique()}")
     print(f"Test users: {test_df['user_id'].nunique()}")
 
-    model = XGBClassifier(
-        n_estimators=150,
-        max_depth=4,
-        learning_rate=0.05,
-        subsample=0.9,
-        colsample_bytree=0.9,
-        objective="multi:softprob",
-        num_class=3,
-        eval_metric="mlogloss",
-        random_state=42,
-    )
+    def objective(trial: optuna.Trial) -> float:
+        model = build_model(trial)
+        model.fit(X_train, y_train)
+        preds = model.predict(X_test)
+        return f1_score(y_test, preds, average="macro")
 
-    model.fit(X_train, y_train)
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=50, show_progress_bar=False)
 
-    preds = model.predict(X_test)
+    best_model = build_model(study.best_trial)
+    best_model.fit(X_train, y_train)
+
+    preds = best_model.predict(X_test)
+    probs = best_model.predict_proba(X_test)
+
     macro_f1 = f1_score(y_test, preds, average="macro")
+    auc_roc = roc_auc_score(y_test, probs, multi_class="ovr")
     report = classification_report(
         y_test,
         preds,
@@ -165,10 +181,11 @@ def train() -> None:
     )
 
     artifact = {
-        "model": model,
+        "model": best_model,
         "feature_columns": TRAINING_FEATURE_COLUMNS,
         "label_map": LABEL_MAP,
         "inverse_label_map": INV_LABEL_MAP,
+        "best_params": study.best_params,
     }
     joblib.dump(artifact, MODEL_PATH)
 
@@ -181,8 +198,12 @@ def train() -> None:
         f"Train users: {train_df['user_id'].nunique()}\n\n"
         f"Test users: {test_df['user_id'].nunique()}\n\n"
         f"Macro F1: {macro_f1:.4f}\n\n"
+        f"AUC-ROC (OVR): {auc_roc:.4f}\n\n"
+        "## Best Optuna Parameters\n\n"
+        f"```json\n{json.dumps(study.best_params, indent=2)}\n```\n\n"
         "## Classification Report\n\n"
-        f"```\n{report}\n```\n"
+        f"```\n{report}\n```\n",
+        encoding="utf-8",
     )
 
     RETRAIN_LOG.write_text(
@@ -197,15 +218,19 @@ def train() -> None:
                 "train_users": int(train_df["user_id"].nunique()),
                 "test_users": int(test_df["user_id"].nunique()),
                 "macro_f1": round(float(macro_f1), 4),
+                "auc_roc_ovr": round(float(auc_roc), 4),
                 "feature_columns": TRAINING_FEATURE_COLUMNS,
                 "class_distribution": df["strain_level"].value_counts().to_dict(),
+                "best_params": study.best_params,
             },
             indent=2,
-        )
+        ),
+        encoding="utf-8",
     )
 
     print(f"\nModel saved to: {MODEL_PATH}")
     print(f"Macro F1: {macro_f1:.4f}")
+    print(f"AUC-ROC: {auc_roc:.4f}")
     print("Done.")
 
 

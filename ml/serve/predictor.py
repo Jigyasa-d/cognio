@@ -1,54 +1,42 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Dict, List
 
 import joblib
 import numpy as np
 import pandas as pd
 
+try:
+    from ml.src.shap_explainer import get_top_features
+except ImportError:
+    from src.shap_explainer import get_top_features
+
 
 ROOT = Path(__file__).resolve().parents[1]
-MODEL_PATH = ROOT / "models" / "rf_prototype.joblib"
-SCALER_PATH = ROOT / "models" / "scaler.joblib"
-
-FEATURE_COLUMNS = [
-    "n_interactions",
-    "accuracy",
-    "accuracy_pct",
-    "incorrect_rate",
-    "avg_elapsed_time",
-    "median_elapsed_time",
-    "std_elapsed_time",
-    "p90_elapsed_time",
-    "long_response_rate",
-    "retry_rate",
-    "wrong_streak_max",
-    "efficiency_score",
-    "error_burden",
-    "retry_burden",
-    "time_pressure_index",
-    "struggle_index",
-    "consistency_index",
-    "pace_ratio",
-    "elapsed_range_proxy",
-]
-
-LABEL_MAP = {
-    0: "LOW",
-    1: "MODERATE",
-    2: "HIGH",
-}
+MODEL_PATH = ROOT / "models" / "xgb_full.joblib"
 
 
 class CognioPredictor:
-    def __init__(self):
-        if not MODEL_PATH.exists():
-            raise FileNotFoundError(f"Missing model: {MODEL_PATH}")
-        if not SCALER_PATH.exists():
-            raise FileNotFoundError(f"Missing scaler: {SCALER_PATH}")
+    def __init__(self, model_path: Path = MODEL_PATH):
+        if not model_path.exists():
+            raise FileNotFoundError(f"Model not found at {model_path}. Run retrain.py first.")
 
-        self.model = joblib.load(MODEL_PATH)
-        self.scaler = joblib.load(SCALER_PATH)
+        artifact = joblib.load(model_path)
 
-    def _adapt_live_to_training_features(self, live_features: dict) -> dict:
+        if not isinstance(artifact, dict) or "model" not in artifact or "feature_columns" not in artifact:
+            raise ValueError("Saved XGBoost artifact format is invalid.")
+
+        self.model = artifact["model"]
+        self.feature_columns: List[str] = artifact["feature_columns"]
+        self.inverse_label_map: Dict[int, str] = {
+            int(k): v for k, v in artifact.get(
+                "inverse_label_map",
+                {0: "LOW", 1: "MODERATE", 2: "HIGH"},
+            ).items()
+        }
+
+    def _adapt_live_to_training_features(self, live_features: Dict[str, float]) -> Dict[str, float]:
         latency_delta = float(live_features.get("latency_delta", 0.0))
         error_rate = float(live_features.get("error_rate", 0.0))
         attempt_burst = float(live_features.get("attempt_burst", 0.0))
@@ -76,7 +64,6 @@ class CognioPredictor:
         error_burden = error_rate * n_interactions
         retry_burden = retry_rate * n_interactions
         time_pressure_index = avg_elapsed_time * error_rate
-
         struggle_index = (
             0.35 * error_rate
             + 0.20 * retry_rate
@@ -84,7 +71,6 @@ class CognioPredictor:
             + 0.15 * (wrong_streak_max / (n_interactions + eps))
             + 0.15 * hint_reliance
         )
-
         consistency_index = 1.0 / (1.0 + std_elapsed_time)
         pace_ratio = p90_elapsed_time / (median_elapsed_time + eps)
         elapsed_range_proxy = p90_elapsed_time - median_elapsed_time
@@ -111,30 +97,40 @@ class CognioPredictor:
             "elapsed_range_proxy": elapsed_range_proxy,
         }
 
-    def predict(self, live_features: dict) -> dict:
+    def predict(self, live_features: Dict[str, float]) -> Dict:
         adapted = self._adapt_live_to_training_features(live_features)
 
-        row = pd.DataFrame([[adapted[col] for col in FEATURE_COLUMNS]], columns=FEATURE_COLUMNS)
-        row_scaled = self.scaler.transform(row)
+        input_df = pd.DataFrame(
+            [[adapted[col] for col in self.feature_columns]],
+            columns=self.feature_columns,
+        )
 
-        probs = self.model.predict_proba(row_scaled)[0]
+        probs = self.model.predict_proba(input_df)[0]
         pred_idx = int(np.argmax(probs))
         confidence = float(probs[pred_idx])
-        strain_level = LABEL_MAP[pred_idx]
+        strain_level = self.inverse_label_map[pred_idx]
 
-        if confidence < 0.5:
+        if confidence < 0.50:
             strain_level = "MODERATE"
 
-        importances = self.model.feature_importances_
-        contribution_scores = np.abs(importances * row_scaled[0])
-        top_idx = np.argsort(contribution_scores)[::-1][:3]
-        top_features = [FEATURE_COLUMNS[i] for i in top_idx]
-
-        trigger_adaptation = strain_level in {"HIGH", "MODERATE"}
+        try:
+            top_features = get_top_features(
+                model=self.model,
+                input_df=input_df,
+                feature_columns=self.feature_columns,
+                top_k=3,
+            )
+        except Exception:
+            fallback = sorted(
+                adapted.items(),
+                key=lambda x: abs(float(x[1])),
+                reverse=True,
+            )[:3]
+            top_features = [name for name, _ in fallback]
 
         return {
             "strain_level": strain_level,
             "confidence": round(confidence, 4),
             "top_features": top_features,
-            "trigger_adaptation": trigger_adaptation,
+            "trigger_adaptation": strain_level in {"HIGH", "MODERATE"},
         }

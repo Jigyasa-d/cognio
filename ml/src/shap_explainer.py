@@ -3,19 +3,19 @@ from __future__ import annotations
 from typing import List
 
 import numpy as np
+import pandas as pd
 import shap
 
-from src.feature_engineering import FEATURE_COLUMNS
 
-
-def get_top_features(model, feature_array: np.ndarray, top_k: int = 3) -> List[str]:
+def get_top_features(model, input_df: pd.DataFrame, feature_columns: List[str], top_k: int = 3) -> List[str]:
     explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(feature_array)
+    shap_values = explainer.shap_values(input_df)
 
     if isinstance(shap_values, list):
-        values = np.mean(np.abs(np.array(shap_values)), axis=0)[0]
+        class_idx = int(np.argmax(model.predict_proba(input_df)[0]))
+        values = np.abs(shap_values[class_idx][0])
     else:
-        values = np.abs(shap_values)[0]
+        values = np.abs(shap_values[0])
 
     ranked_idx = np.argsort(values)[::-1][:top_k]
-    return [FEATURE_COLUMNS[i] for i in ranked_idx]
+    return [feature_columns[i] for i in ranked_idx]
