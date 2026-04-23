@@ -1,26 +1,16 @@
-from joblib import load
-import numpy as np
-from app.services.feature_adapter import adapt_features
+import os
+import requests
 
-model = load("models/strain_model.joblib")
+ML_PREDICT_URL = os.getenv("ML_PREDICT_URL", "http://127.0.0.1:8001/ml/predict")
 
-FEATURE_ORDER = [
-    "n_interactions",
-    "accuracy",
-    "avg_elapsed_time",
-    "strain_score",
-    "struggle_index"
-]
 
-def predict_strain(features: dict):
-    adapted = adapt_features(features)
-
-    X = np.array([[adapted[f] for f in FEATURE_ORDER]])
-
-    pred = model.predict(X)[0]
-
-    return {
-        "strain_level": pred,
-        "confidence": 0.9,
-        "trigger_adaptation": pred == "HIGH"
+def predict_strain(student_id: str, content_id: str, features: dict):
+    payload = {
+        "student_id": student_id,
+        "content_id": content_id,
+        "features": features,
     }
+
+    response = requests.post(ML_PREDICT_URL, json=payload, timeout=5)
+    response.raise_for_status()
+    return response.json()
