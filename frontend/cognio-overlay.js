@@ -1,47 +1,54 @@
 (function () {
-  function ensureOverlay() {
-    let div = document.getElementById("cognio-overlay");
+  function getPanel() {
+    return document.getElementById("adaptive-output");
+  }
 
-    if (!div) {
-      div = document.createElement("div");
-      div.id = "cognio-overlay";
-      div.style.position = "fixed";
-      div.style.right = "20px";
-      div.style.bottom = "20px";
-      div.style.width = "320px";
-      div.style.maxWidth = "calc(100vw - 40px)";
-      div.style.background = "#111827";
-      div.style.color = "#ffffff";
-      div.style.padding = "16px";
-      div.style.borderRadius = "14px";
-      div.style.boxShadow = "0 12px 30px rgba(0,0,0,0.22)";
-      div.style.zIndex = "9999";
-      div.style.fontFamily = "Arial, sans-serif";
-      div.style.display = "none";
-      div.style.lineHeight = "1.5";
-      document.body.appendChild(div);
-    }
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
 
-    return div;
+  function formatMultilineText(text) {
+    return escapeHtml(text).replace(/\n/g, "<br><br>");
   }
 
   window.showOverlay = function (message, meta) {
-    const div = ensureOverlay();
+    const panel = getPanel();
+    if (!panel) return;
 
-    const strain = meta?.strain_level ? `<div style="font-size:12px;opacity:0.8;margin-bottom:6px;">Strain: ${meta.strain_level}</div>` : "";
-    const note = meta?.explanation_note ? `<div style="font-size:12px;opacity:0.8;margin-top:8px;">${meta.explanation_note}</div>` : "";
+    const strain = String(meta?.strain_level || "LOW");
+    const explanation = meta?.explanation_note || "";
+    const behavior = meta?.behavior_summary || "";
+    const confidence =
+      meta?.confidence !== undefined && meta?.confidence !== null && meta?.confidence !== ""
+        ? `${Math.round(Number(meta.confidence) * 100)}%`
+        : "";
 
-    div.innerHTML = `
-      <div style="font-weight:700;margin-bottom:8px;">Cognio Adaptation</div>
-      ${strain}
-      <div>${message}</div>
-      ${note}
+    panel.innerHTML = `
+      <div class="adapt-badge adapt-${strain}">${escapeHtml(strain)} STRAIN</div>
+      <h3 class="adapt-title">Cognio Learning Companion</h3>
+      <div class="adapt-text">${formatMultilineText(message || "No adaptation text returned.")}</div>
+      <div class="adapt-meta">
+        <div><strong>Why this changed:</strong> ${escapeHtml(explanation)}</div>
+        <div><strong>Observed behavior:</strong> ${escapeHtml(behavior)}</div>
+        ${confidence ? `<div><strong>Model confidence:</strong> ${escapeHtml(confidence)}</div>` : ""}
+      </div>
     `;
-    div.style.display = "block";
   };
 
-  window.hideOverlay = function () {
-    const div = document.getElementById("cognio-overlay");
-    if (div) div.style.display = "none";
+  window.clearOverlay = function () {
+    const panel = getPanel();
+    if (!panel) return;
+
+    panel.innerHTML = `
+      <div class="companion-empty">
+        <div class="companion-icon">✦</div>
+        <p>Interact with the lesson and Cognio will adapt the explanation to your learning pattern in real time.</p>
+      </div>
+    `;
   };
 })();

@@ -1,121 +1,143 @@
 import os
-import re
 from pathlib import Path
-from typing import List
 
 from openai import OpenAI
 
-
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
 PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "system_prompt.txt"
+
+CONTENT_LIBRARY = {
+    "UNIT_DEMO": {
+        "title": "Photosynthesis",
+        "text": (
+            "Photosynthesis is the process by which plants convert sunlight, water, "
+            "and carbon dioxide into glucose and oxygen."
+        )
+    }
+}
 
 
 def load_prompt() -> str:
-    with open(PROMPT_PATH, "r", encoding="utf-8") as f:
-        return f.read()
-
-
-def preprocess_text(text: str) -> str:
-    """
-    Minimal NLP preprocessing that will NOT break the current pipeline.
-    - normalizes whitespace
-    - removes repeated spaces/newlines
-    - keeps punctuation intact
-    - truncates very long content safely
-    """
-    text = re.sub(r"\s+", " ", text).strip()
-
-    if len(text) > 1200:
-        text = text[:1200].rsplit(" ", 1)[0] + "..."
-
-    return text
-
-
-def extract_focus_terms(explanation_note: str) -> List[str]:
-    """
-    Very lightweight NLP-ish helper:
-    converts explanation note into a small list of focus terms.
-    """
-    terms = re.findall(r"[A-Za-z_]+", explanation_note.lower())
-    stopwords = {
-        "adapted", "due", "to", "based", "on", "and", "the", "a", "an",
-        "overall", "performance"
-    }
-    filtered = [t for t in terms if t not in stopwords]
-    seen = []
-    for t in filtered:
-        if t not in seen:
-            seen.append(t)
-    return seen[:5]
-
-
-def transform_content(prediction: dict, explanation_note: str) -> str:
-    """
-    Uses GPT-4o-mini to adapt content based on learner strain.
-    Includes safe preprocessing + fallback if API fails.
-    Keeps the same interface as your current code.
-    """
-    strain = prediction.get("strain_level", "LOW")
-
-    system_prompt = load_prompt()
-
-    # keeping your current content source so current flow does not break
-    content = (
-        "Photosynthesis is the process by which plants convert sunlight, "
-        "water, and carbon dioxide into energy in the form of glucose."
+    if PROMPT_PATH.exists():
+        return PROMPT_PATH.read_text(encoding="utf-8")
+    return (
+        "You are Cognio, an adaptive learning companion. "
+        "Rewrite explanations based on student behavior and predicted cognitive strain."
     )
 
-    # ✅ preprocessing step added safely
-    content = preprocess_text(content)
-    focus_terms = extract_focus_terms(explanation_note)
+
+def get_content(content_id: str) -> dict:
+    return CONTENT_LIBRARY.get(content_id, CONTENT_LIBRARY["UNIT_DEMO"])
+
+
+def transform_content(
+    prediction: dict,
+    explanation_note: str,
+    content_id: str,
+    behavior_summary: str,
+    features: dict,
+) -> str:
+    strain = prediction.get("strain_level", "LOW")
+    top_features = prediction.get("top_features", [])
+    content = get_content(content_id)
+
+    wrong_streak = features.get("wrong_streak", 0)
+    hints_used = features.get("hints_used", 0)
+    rereads = features.get("rereads", 0)
+    avg_response_time = features.get("avg_response_time", 0)
+    error_rate = features.get("error_rate", 0)
+    total_attempts = features.get("total_attempts", 0)
+
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is missing in backend environment")
+
+    client = OpenAI(api_key=api_key)
+    system_prompt = load_prompt()
+
+    style_hint = {
+        "HIGH": "Use very short sentences. Be gentle, simple, and reassuring.",
+        "MODERATE": "Be clear, structured, and supportive.",
+        "LOW": "Be smooth, simple, and slightly deeper."
+    }.get(strain, "Be clear and helpful.")
 
     user_prompt = f"""
-Strain Level: {strain}
+You are generating adaptive lesson support for a learner.
 
-Reason for adaptation:
-{explanation_note}
+Topic:
+{content["title"]}
 
-Focus terms:
-{", ".join(focus_terms) if focus_terms else "general clarity"}
+Original content:
+{content["text"]}
 
-Rewrite the following educational content.
+Predicted strain:
+{strain}
 
-Rules:
-- HIGH -> very simple, short sentences, step-by-step
-- MODERATE -> clear explanation with one simple example
-- LOW -> detailed but still easy to follow
+Behavior summary:
+{behavior_summary}
 
-Content:
-{content}
+Behavior values:
+- wrong_streak = {wrong_streak}
+- hints_used = {hints_used}
+- rereads = {rereads}
+- avg_response_time_ms = {avg_response_time}
+- error_rate = {error_rate}
+- total_attempts = {total_attempts}
 
-Return only the rewritten explanation.
+Top behavioral signals:
+{", ".join(top_features) if top_features else "none"}
+
+Critical instruction:
+Do NOT make this response depend only on strain.
+Use the exact behavior pattern.
+
+Behavior-specific adaptation rules:
+- If wrong_streak is high and response time is fast, the learner is likely guessing or spiraling. Reset the explanation simply and directly.
+- If hints_used is high, the learner needs more guided support and scaffolding.
+- If rereads is high, the learner needs rephrasing and conceptual clarity.
+- If response time is slow, the learner may be hesitating and needs gentler pacing.
+- Two learners with the same strain must still get noticeably different wording and structure if their behaviors differ.
+
+Output style:
+HIGH:
+- short and simple
+- may use one analogy
+- may use short steps if helpful
+
+MODERATE:
+- structured explanation
+- one example if useful
+
+LOW:
+- easy paraphrase
+- slightly deeper, still simple
+
+Strict rules:
+- school-level language only
+- no markdown
+- no JSON
+- no headings
+- no identical structure across runs
+- do not mention strain, metrics, or model features directly
+- do not use advanced biology terms not already in the original content
+
+Style guidance:
+{style_hint}
+
+Return only the adapted explanation.
 """
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0.5,
-            max_tokens=180,
-            timeout=8,
-        )
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=1.0,
+        max_tokens=180,
+    )
 
-        return response.choices[0].message.content.strip()
+    text = response.choices[0].message.content
+    if not text or not text.strip():
+        raise RuntimeError("OpenAI returned an empty adaptation")
 
-    except Exception as e:
-        print("LLM ERROR:", e)
-
-        # safe fallback
-        if strain == "HIGH":
-            return "Plants use sunlight, water, and carbon dioxide to make their own food."
-        elif strain == "MODERATE":
-            return "Photosynthesis is how plants make food using sunlight, water, and carbon dioxide."
-        else:
-            return (
-                "Photosynthesis is the biological process through which plants use sunlight "
-                "to convert water and carbon dioxide into glucose and oxygen."
-            )
+    return text.strip()

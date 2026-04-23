@@ -2,126 +2,516 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Cognio Live Demo</title>
+  <title>Cognio — Adaptive Learning</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      --bg: #09090f;
+      --surface: #12121c;
+      --surface2: #1a1a28;
+      --border: rgba(255,255,255,0.07);
+      --text: #e8e8f0;
+      --muted: #6b6b8a;
+      --accent: #7c6ff7;
+      --accent2: #4fd1c5;
+
+      --high: #ff6b6b;
+      --high-bg: rgba(255,107,107,0.10);
+      --high-border: rgba(255,107,107,0.25);
+
+      --moderate: #f6c90e;
+      --moderate-bg: rgba(246,201,14,0.08);
+      --moderate-border: rgba(246,201,14,0.25);
+
+      --low: #34d399;
+      --low-bg: rgba(52,211,153,0.08);
+      --low-border: rgba(52,211,153,0.25);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f5f7fb;
-      color: #1f2937;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    .container {
-      max-width: 980px;
-      margin: 40px auto;
-      padding: 24px;
+    .shell {
+      display: grid;
+      grid-template-columns: 220px 1fr 420px;
+      min-height: 100vh;
     }
 
-    .card {
-      background: white;
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 28px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text);
+      padding: 8px 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .nav-item {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: rgba(124,111,247,0.12); color: var(--accent); }
+
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      padding-left: 14px;
+    }
+
+    .student-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      color: white;
+    }
+
+    .main {
+      padding: 32px 28px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .breadcrumb {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .breadcrumb span { color: var(--text); font-weight: 500; }
+
+    .lesson-header {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .lesson-sub {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .content-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 18px;
       padding: 24px;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
-      margin-bottom: 20px;
     }
 
-    h1 {
-      margin-top: 0;
-      font-size: 32px;
+    .content-tag {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
     }
 
-    .content-box {
-      background: #eef2ff;
-      border-left: 5px solid #6366f1;
+    .content-text {
+      font-size: 17px;
+      line-height: 1.75;
+      color: #c8c8e0;
+      border-left: 3px solid var(--accent);
+      padding-left: 16px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
       padding: 16px;
-      border-radius: 12px;
-      margin: 16px 0;
-      line-height: 1.6;
+      transition: border-color 0.3s;
     }
 
-    .button-row {
+    .metric-card.active-high { border-color: var(--high-border); background: var(--high-bg); }
+    .metric-card.active-moderate { border-color: var(--moderate-border); background: var(--moderate-bg); }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .metric-value.strain-HIGH { color: var(--high); }
+    .metric-value.strain-MODERATE { color: var(--moderate); }
+    .metric-value.strain-LOW { color: var(--low); }
+
+    .btn-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px 24px;
+    }
+
+    .btn-section-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .btn-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 18px;
+      gap: 10px;
     }
 
-    button {
+    .btn {
       border: none;
-      background: #111827;
-      color: white;
-      padding: 12px 16px;
+      padding: 11px 18px;
       border-radius: 12px;
       cursor: pointer;
-      font-size: 14px;
-    }
-
-    button:hover {
-      opacity: 0.92;
-    }
-
-    pre {
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      background: #0f172a;
-      color: #e2e8f0;
-      padding: 16px;
-      border-radius: 12px;
-      overflow: auto;
-    }
-
-    #demo-log {
-      max-height: 260px;
-      overflow: auto;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
       display: flex;
-      flex-direction: column-reverse;
-      gap: 8px;
-      font-size: 14px;
+      align-items: center;
+      gap: 7px;
     }
 
-    .muted {
-      color: #6b7280;
+    .btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-wrong { background: rgba(255,107,107,0.15); color: var(--high); border: 1px solid var(--high-border); }
+    .btn-correct { background: rgba(52,211,153,0.12); color: var(--low); border: 1px solid var(--low-border); }
+    .btn-hint { background: rgba(246,201,14,0.10); color: var(--moderate); border: 1px solid var(--moderate-border); }
+    .btn-reread { background: rgba(124,111,247,0.12); color: var(--accent); border: 1px solid rgba(124,111,247,0.3); }
+    .btn-reset { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+    .log-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px 24px;
+    }
+
+    .log-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .log-scroll {
+      max-height: 160px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .log-entry {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace, 'DM Sans', sans-serif;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: color 0.2s;
+    }
+
+    .log-entry.new { color: var(--text); }
+    .log-entry.error { color: var(--high); }
+    .log-entry.success { color: var(--low); }
+
+    .right-panel {
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      padding: 28px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    .panel-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .companion-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 320px;
+      text-align: center;
+      gap: 12px;
+      color: var(--muted);
+    }
+
+    .companion-icon {
+      font-size: 48px;
+      opacity: 0.3;
+    }
+
+    .companion-empty p {
       font-size: 14px;
+      line-height: 1.6;
+      max-width: 260px;
+    }
+
+    .adapt-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+
+    .adapt-high,
+    .adapt-HIGH {
+      background: var(--high-bg);
+      color: var(--high);
+      border: 1px solid var(--high-border);
+    }
+
+    .adapt-moderate,
+    .adapt-MODERATE {
+      background: var(--moderate-bg);
+      color: var(--moderate);
+      border: 1px solid var(--moderate-border);
+    }
+
+    .adapt-low,
+    .adapt-LOW {
+      background: var(--low-bg);
+      color: var(--low);
+      border: 1px solid var(--low-border);
+    }
+
+    .adapt-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.3;
+      letter-spacing: -0.3px;
+      margin-bottom: 12px;
+    }
+
+    .adapt-text {
+      font-size: 14px;
+      line-height: 1.75;
+      color: #c8c8e0;
+      white-space: normal;
+    }
+
+    .adapt-meta {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    #raw-response {
+      display: none;
+    }
+
+    @media (max-width: 1100px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .right-panel { border-left: none; border-top: 1px solid var(--border); }
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <h1>Cognio Live Demo</h1>
-      <div class="muted">
-        Demo flow: student makes 3 wrong attempts → frontend sends behavioral features →
-        backend hits ML service → adaptation returned → overlay shown.
-      </div>
+<div class="shell">
 
-      <h3>Original content</h3>
-      <div class="content-box">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      Cognio
+    </div>
+    <div class="nav-item"><span class="nav-icon">⊞</span> Dashboard</div>
+    <div class="nav-item"><span class="nav-icon">📚</span> My Courses</div>
+    <div class="nav-item active"><span class="nav-icon">▶</span> Lesson Player</div>
+    <div class="nav-item"><span class="nav-icon">✦</span> Companion</div>
+    <div class="nav-item"><span class="nav-icon">◎</span> Insights</div>
+
+    <div class="sidebar-footer">
+      <div class="student-chip">
+        <div class="avatar">J</div>
+        <div>
+          <div style="font-size:13px;color:var(--text);font-weight:500">STU_DEMO</div>
+          <div>Biology · Unit 4</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="breadcrumb">
+        Biology &rsaquo; <span>Lesson 04 — Photosynthesis</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">Live Session</div>
+    </div>
+
+    <div>
+      <div class="lesson-header">Photosynthesis</div>
+      <div class="lesson-sub">How plants convert light into energy</div>
+    </div>
+
+    <div class="content-card">
+      <div class="content-tag">📖 Reading Material</div>
+      <div class="content-text">
         Photosynthesis is the process by which plants convert sunlight, water,
         and carbon dioxide into glucose and oxygen.
       </div>
+    </div>
 
-      <div class="button-row">
-        <button onclick="submitWrongAnswer()">Submit Wrong Answer</button>
-        <button onclick="submitCorrectAnswer()">Submit Correct Answer</button>
-        <button onclick="useHint()">Use Hint</button>
-        <button onclick="rereadContent()">Reread Content</button>
-        <button onclick="resetDemo()">Reset Demo</button>
+    <div class="metrics-grid">
+      <div class="metric-card" id="mc-attempts">
+        <div class="metric-label">Total Attempts</div>
+        <div class="metric-value" id="metric-attempts">0</div>
+      </div>
+      <div class="metric-card" id="mc-streak">
+        <div class="metric-label">Wrong Streak</div>
+        <div class="metric-value" id="metric-wrongstreak">0</div>
+      </div>
+      <div class="metric-card" id="mc-hints">
+        <div class="metric-label">Hints Used</div>
+        <div class="metric-value" id="metric-hints">0</div>
+      </div>
+      <div class="metric-card" id="mc-rereads">
+        <div class="metric-label">Rereads</div>
+        <div class="metric-value" id="metric-rereads">0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Avg Response</div>
+        <div class="metric-value" id="metric-avgtime">— ms</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Predicted Strain</div>
+        <div class="metric-value" id="metric-strain" style="font-size:18px;">—</div>
       </div>
     </div>
 
-    <div class="card">
-      <h3>Live event log</h3>
-      <div id="demo-log"></div>
+    <div class="btn-section">
+      <div class="btn-section-title">Simulate Learner Behavior</div>
+      <div class="btn-row">
+        <button class="btn btn-wrong" id="btn-wrong">✗ Wrong Answer</button>
+        <button class="btn btn-correct" id="btn-correct">✓ Correct Answer</button>
+        <button class="btn btn-hint" id="btn-hint">💡 Use Hint</button>
+        <button class="btn btn-reread" id="btn-reread">↩ Reread</button>
+        <button class="btn btn-reset" id="btn-reset">↺ Reset</button>
+      </div>
     </div>
 
-    <div class="card">
-      <h3>Backend raw response</h3>
-      <pre id="raw-response"></pre>
+    <div class="log-card">
+      <div class="log-title">Event Log</div>
+      <div class="log-scroll" id="demo-log">
+        <div class="log-entry">Waiting for interactions…</div>
+      </div>
     </div>
-  </div>
 
-  <script src="cognio-overlay.js"></script>
-  <script src="tracker.js"></script>
+    <pre id="raw-response"></pre>
+  </main>
+
+  <aside class="right-panel">
+    <div class="panel-label">Cognio Learning Companion</div>
+    <div id="adaptive-output">
+      <div class="companion-empty">
+        <div class="companion-icon">✦</div>
+        <p>Interact with the lesson and Cognio will adapt the explanation to your learning pattern in real time.</p>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<script src="cognio-overlay.js"></script>
+<script src="tracker.js"></script>
 </body>
 </html>

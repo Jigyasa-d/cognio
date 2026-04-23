@@ -1,33 +1,40 @@
-from fastapi import APIRouter
 from pydantic import BaseModel
+from typing import List, Optional
 
-from app.services.ml_client import predict_strain
-from app.services.gpt_adapter import transform_content
 
-router = APIRouter()
+class Features(BaseModel):
+    latency_delta: float
+    error_rate: float
+    attempt_burst: int
+    attention_drop: int
+    hint_reliance: float
+    cold_start_latency: float
+    exit_flag_ratio: float
+    reread_normalized: float
+
+    wrong_streak: int = 0
+    total_attempts: int = 0
+    hints_used: int = 0
+    rereads: int = 0
+    avg_response_time: float = 0.0
 
 
 class AdaptRequest(BaseModel):
     student_id: str
     content_id: str
-    features: dict
+    features: Features
+    behavior_summary: Optional[str] = None
+    disable_cache: bool = False
 
 
-@router.post("/adapt")
-def adapt(req: AdaptRequest):
-    prediction = predict_strain(
-        student_id=req.student_id,
-        content_id=req.content_id,
-        features=req.features,
-    )
+class Prediction(BaseModel):
+    strain_level: str
+    confidence: float
+    trigger_adaptation: bool
+    top_features: List[str]
 
-    top_features = prediction.get("top_features", [])
-    explanation_note = f"Adapted due to: {', '.join(top_features)}"
 
-    adaptation = transform_content(prediction, explanation_note)
-
-    return {
-        "prediction": prediction,
-        "explanation_note": explanation_note,
-        "adaptation": adaptation,
-    }
+class AdaptResponse(BaseModel):
+    prediction: Prediction
+    adaptation: str
+    explanation_note: str

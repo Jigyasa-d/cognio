@@ -1,24 +1,18 @@
-# Python
+.venv/
+venv/
+backend/venv/
+ml/venv/
 __pycache__/
 *.pyc
-.venv/
-
-# Environment / secrets
-.env
-.env.*
-!.env.example
-
-# Databases
+*.pyo
+.DS_Store
+*.zip
+*.tar.gz
 *.db
 *.sqlite3
-
-# ML artifacts
+ml/data/raw/
+ml/data/interim/
+ml/data/processed/
 ml/models/
-*.joblib
-
-# Jupyter
-.ipynb_checkpoints/
-
-# OS / editor files
-.DS_Store
-.vscode/
+ml/reports/
+node_modules/
