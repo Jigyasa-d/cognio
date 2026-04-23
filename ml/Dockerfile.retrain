@@ -1,0 +1,17 @@
+FROM python:3.11-slim
+
+WORKDIR /app/ml
+
+RUN apt-get update && apt-get install -y cron && rm -rf /var/lib/apt/lists/*
+
+COPY ml/requirements-ml.txt /app/ml/requirements-ml.txt
+RUN pip install --no-cache-dir -r requirements-ml.txt
+
+COPY ml /app/ml
+
+# Run every day at 02:00 UTC; retrain.py itself decides whether 14 days / drift / new data requires retrain
+RUN echo "0 2 * * * cd /app/ml && FORCE_RETRAIN=0 python src/retrain.py >> /var/log/retrain.log 2>&1" > /etc/cron.d/retrain-cron \
+    && chmod 0644 /etc/cron.d/retrain-cron \
+    && crontab /etc/cron.d/retrain-cron
+
+CMD ["cron", "-f"]

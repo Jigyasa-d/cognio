@@ -1,49 +1,62 @@
 {
-  "status": "success",
-  "model_path": "/Users/jigyasa/Vscode-me/cognio/ml/models/xgb_full.joblib",
-  "rows_used": 188,
-  "unique_users": 187,
-  "train_rows": 150,
-  "test_rows": 38,
-  "train_users": 149,
-  "test_users": 38,
-  "macro_f1": 0.9475,
-  "auc_roc_ovr": 0.9927,
-  "feature_columns": [
-    "n_interactions",
-    "accuracy",
-    "accuracy_pct",
-    "incorrect_rate",
-    "avg_elapsed_time",
-    "median_elapsed_time",
-    "std_elapsed_time",
-    "p90_elapsed_time",
-    "long_response_rate",
-    "retry_rate",
-    "wrong_streak_max",
-    "efficiency_score",
-    "error_burden",
-    "retry_burden",
-    "time_pressure_index",
-    "struggle_index",
-    "consistency_index",
-    "pace_ratio",
-    "elapsed_range_proxy"
-  ],
-  "class_distribution": {
-    "HIGH": 63,
-    "LOW": 63,
-    "MODERATE": 62
-  },
-  "best_params": {
-    "n_estimators": 148,
-    "max_depth": 7,
-    "learning_rate": 0.08138548782952389,
-    "subsample": 0.9829448859107618,
-    "colsample_bytree": 0.829552673481714,
-    "min_child_weight": 7,
-    "gamma": 0.04351153838259225,
-    "reg_alpha": 1.9491693341284133,
-    "reg_lambda": 2.007055006281302
-  }
+  "history": [
+    {
+      "timestamp": "2026-04-23T03:38:47.150229+00:00",
+      "status": "rejected",
+      "new_data_found": false,
+      "rows_used": 188,
+      "unique_users": 187,
+      "baseline_f1": 0.9475,
+      "baseline_auc": 0.9927,
+      "candidate_f1": 0.9475,
+      "candidate_auc": 0.9845,
+      "best_params": {
+        "n_estimators": 140,
+        "max_depth": 3,
+        "learning_rate": 0.15478990200162526,
+        "subsample": 0.9502749874425869,
+        "colsample_bytree": 0.8714195734793577,
+        "min_child_weight": 8,
+        "gamma": 1.7483541767141022,
+        "reg_alpha": 2.255758912710475,
+        "reg_lambda": 1.0767554957556325
+      },
+      "details": {
+        "scheduled_due": true,
+        "baseline_f1": null,
+        "current_f1": 0.9475205417234402,
+        "drift_triggered": false,
+        "drift_threshold": 0.05
+      }
+    },
+    {
+      "timestamp": "2026-04-23T03:39:58.076606+00:00",
+      "status": "rejected",
+      "new_data_found": false,
+      "rows_used": 188,
+      "unique_users": 187,
+      "baseline_f1": 0.9475,
+      "baseline_auc": 0.9927,
+      "candidate_f1": 0.9475,
+      "candidate_auc": 0.9917,
+      "best_params": {
+        "n_estimators": 252,
+        "max_depth": 6,
+        "learning_rate": 0.011799986487602486,
+        "subsample": 0.7716552447826693,
+        "colsample_bytree": 0.939547476079912,
+        "min_child_weight": 8,
+        "gamma": 1.2356986553903133,
+        "reg_alpha": 1.0883370755780861,
+        "reg_lambda": 4.440310041274345
+      },
+      "details": {
+        "scheduled_due": false,
+        "baseline_f1": null,
+        "current_f1": 0.9475205417234402,
+        "drift_triggered": false,
+        "drift_threshold": 0.05
+      }
+    }
+  ]
 }

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 import joblib
@@ -10,6 +12,7 @@ from sklearn.metrics import classification_report, f1_score, roc_auc_score
 from sklearn.model_selection import GroupShuffleSplit
 from xgboost import XGBClassifier
 
+from src.drift_detector import should_retrain
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
@@ -17,7 +20,10 @@ MODELS_DIR = ROOT / "models"
 REPORTS_DIR = ROOT / "reports"
 
 FEATURES_PATH = DATA_DIR / "features.parquet"
+NEW_FEATURES_PATH = DATA_DIR / "new_features.parquet"
+
 MODEL_PATH = MODELS_DIR / "xgb_full.joblib"
+CANDIDATE_MODEL_PATH = MODELS_DIR / "xgb_candidate.joblib"
 REPORT_PATH = REPORTS_DIR / "xgb_evaluation.md"
 RETRAIN_LOG = REPORTS_DIR / "retrain_log.json"
 
@@ -47,12 +53,27 @@ TRAINING_FEATURE_COLUMNS = [
 ]
 
 
-def load_training_data() -> pd.DataFrame:
+def load_base_data() -> pd.DataFrame:
     if not FEATURES_PATH.exists():
         raise FileNotFoundError(
             f"Training features not found at {FEATURES_PATH}. Run feature_engineering.py first."
         )
     return pd.read_parquet(FEATURES_PATH)
+
+
+def merge_new_data(base_df: pd.DataFrame) -> tuple[pd.DataFrame, bool]:
+    if not NEW_FEATURES_PATH.exists():
+        return base_df.copy(), False
+
+    new_df = pd.read_parquet(NEW_FEATURES_PATH).copy()
+    combined = pd.concat([base_df, new_df], ignore_index=True)
+
+    if "session_id" in combined.columns:
+        combined = combined.drop_duplicates(subset=["session_id"], keep="last")
+    else:
+        combined = combined.drop_duplicates()
+
+    return combined, True
 
 
 def validate_training_frame(df: pd.DataFrame) -> pd.DataFrame:
@@ -128,16 +149,120 @@ def build_model(trial: optuna.Trial) -> XGBClassifier:
     )
 
 
-def train() -> None:
+def evaluate_model(model, X_test: pd.DataFrame, y_test: pd.Series) -> tuple[float, float, str]:
+    preds = model.predict(X_test)
+    probs = model.predict_proba(X_test)
+
+    macro_f1 = f1_score(y_test, preds, average="macro")
+    auc_roc = roc_auc_score(y_test, probs, multi_class="ovr")
+    report = classification_report(
+        y_test,
+        preds,
+        target_names=["LOW", "MODERATE", "HIGH"],
+        digits=4,
+        zero_division=0,
+    )
+    return macro_f1, auc_roc, report
+
+
+def load_baseline_model():
+    if not MODEL_PATH.exists():
+        return None
+
+    artifact = joblib.load(MODEL_PATH)
+    if not isinstance(artifact, dict) or "model" not in artifact:
+        return None
+    return artifact["model"]
+
+
+def write_report(
+    rows_used: int,
+    unique_users: int,
+    train_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+    macro_f1: float,
+    auc_roc: float,
+    report: str,
+    best_params: dict,
+):
+    REPORT_PATH.write_text(
+        "# XGBoost Evaluation Report\n\n"
+        f"Training rows used: {rows_used}\n\n"
+        f"Unique users: {unique_users}\n\n"
+        f"Train split rows: {len(train_df)}\n\n"
+        f"Test split rows: {len(test_df)}\n\n"
+        f"Train users: {train_df['user_id'].nunique()}\n\n"
+        f"Test users: {test_df['user_id'].nunique()}\n\n"
+        f"Macro F1: {macro_f1:.4f}\n\n"
+        f"AUC-ROC (OVR): {auc_roc:.4f}\n\n"
+        "## Best Optuna Parameters\n\n"
+        f"```json\n{json.dumps(best_params, indent=2)}\n```\n\n"
+        "## Classification Report\n\n"
+        f"```\n{report}\n```\n",
+        encoding="utf-8",
+    )
+
+
+def append_retrain_log(event: dict):
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    if RETRAIN_LOG.exists():
+        try:
+            existing = json.loads(RETRAIN_LOG.read_text(encoding="utf-8"))
+            if isinstance(existing, list):
+                history = existing
+            elif isinstance(existing, dict) and "history" in existing:
+                history = existing["history"]
+            else:
+                history = []
+        except Exception:
+            history = []
+    else:
+        history = []
+
+    history.append(event)
+    RETRAIN_LOG.write_text(json.dumps({"history": history}, indent=2), encoding="utf-8")
+
+
+def atomic_deploy(candidate_artifact: dict):
+    tmp_path = MODEL_PATH.with_suffix(".tmp")
+    joblib.dump(candidate_artifact, tmp_path)
+    os.replace(tmp_path, MODEL_PATH)
+
+
+def train_candidate(X_train, y_train):
+    def objective(trial: optuna.Trial) -> float:
+        model = build_model(trial)
+        model.fit(X_train, y_train)
+        preds = model.predict(X_test_global)
+        return f1_score(y_test_global, preds, average="macro")
+
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=50, show_progress_bar=False)
+
+    model = build_model(study.best_trial)
+    model.fit(X_train, y_train)
+
+    return model, study.best_params
+
+
+X_test_global = None
+y_test_global = None
+
+
+def main() -> None:
+    global X_test_global, y_test_global
+
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    print(f"Loading training data from: {FEATURES_PATH}")
-    df = load_training_data()
-    df = validate_training_frame(df)
+    base_df = load_base_data()
+    merged_df, new_data_found = merge_new_data(base_df)
+    df = validate_training_frame(merged_df)
 
     print("Training rows:", len(df))
     print("Unique users:", df["user_id"].nunique())
+    print("New data found:", new_data_found)
     print("Class distribution:")
     print(df["strain_level"].value_counts())
 
@@ -149,90 +274,94 @@ def train() -> None:
     X_test = test_df[TRAINING_FEATURE_COLUMNS].copy()
     y_test = test_df["target"].astype(int)
 
-    print("\nUser-level split:")
-    print(f"Train rows: {len(train_df)}")
-    print(f"Test rows: {len(test_df)}")
-    print(f"Train users: {train_df['user_id'].nunique()}")
-    print(f"Test users: {test_df['user_id'].nunique()}")
+    X_test_global = X_test
+    y_test_global = y_test
 
-    def objective(trial: optuna.Trial) -> float:
-        model = build_model(trial)
-        model.fit(X_train, y_train)
-        preds = model.predict(X_test)
-        return f1_score(y_test, preds, average="macro")
+    baseline_model = load_baseline_model()
+    baseline_f1 = None
+    baseline_auc = None
 
-    study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=50, show_progress_bar=False)
+    if baseline_model is not None:
+        baseline_f1, baseline_auc, _ = evaluate_model(baseline_model, X_test, y_test)
+    else:
+        baseline_f1 = 0.0
+        baseline_auc = 0.0
 
-    best_model = build_model(study.best_trial)
-    best_model.fit(X_train, y_train)
+    force_retrain = os.getenv("FORCE_RETRAIN", "0") == "1"
 
-    preds = best_model.predict(X_test)
-    probs = best_model.predict_proba(X_test)
-
-    macro_f1 = f1_score(y_test, preds, average="macro")
-    auc_roc = roc_auc_score(y_test, probs, multi_class="ovr")
-    report = classification_report(
-        y_test,
-        preds,
-        target_names=["LOW", "MODERATE", "HIGH"],
-        digits=4,
-        zero_division=0,
+    allowed, reasons = should_retrain(
+        current_f1=baseline_f1,
+        log_path=RETRAIN_LOG,
+        interval_days=14,
+        drift_threshold=0.05,
     )
 
+    if not force_retrain and not allowed and not new_data_found:
+        event = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "status": "skipped",
+            "reason": "schedule_not_due_and_no_drift_and_no_new_data",
+            "baseline_f1": round(float(baseline_f1), 4),
+            "baseline_auc": round(float(baseline_auc), 4),
+            "details": reasons,
+        }
+        append_retrain_log(event)
+        print("Retrain skipped:", event["reason"])
+        return
+
+    candidate_model, best_params = train_candidate(X_train, y_train)
+    candidate_f1, candidate_auc, candidate_report = evaluate_model(candidate_model, X_test, y_test)
+
     artifact = {
-        "model": best_model,
+        "model": candidate_model,
         "feature_columns": TRAINING_FEATURE_COLUMNS,
         "label_map": LABEL_MAP,
         "inverse_label_map": INV_LABEL_MAP,
-        "best_params": study.best_params,
+        "best_params": best_params,
     }
-    joblib.dump(artifact, MODEL_PATH)
 
-    REPORT_PATH.write_text(
-        "# XGBoost Evaluation Report\n\n"
-        f"Training rows used: {len(df)}\n\n"
-        f"Unique users: {df['user_id'].nunique()}\n\n"
-        f"Train split rows: {len(train_df)}\n\n"
-        f"Test split rows: {len(test_df)}\n\n"
-        f"Train users: {train_df['user_id'].nunique()}\n\n"
-        f"Test users: {test_df['user_id'].nunique()}\n\n"
-        f"Macro F1: {macro_f1:.4f}\n\n"
-        f"AUC-ROC (OVR): {auc_roc:.4f}\n\n"
-        "## Best Optuna Parameters\n\n"
-        f"```json\n{json.dumps(study.best_params, indent=2)}\n```\n\n"
-        "## Classification Report\n\n"
-        f"```\n{report}\n```\n",
-        encoding="utf-8",
-    )
+    deploy = candidate_f1 > baseline_f1
 
-    RETRAIN_LOG.write_text(
-        json.dumps(
-            {
-                "status": "success",
-                "model_path": str(MODEL_PATH),
-                "rows_used": int(len(df)),
-                "unique_users": int(df["user_id"].nunique()),
-                "train_rows": int(len(train_df)),
-                "test_rows": int(len(test_df)),
-                "train_users": int(train_df["user_id"].nunique()),
-                "test_users": int(test_df["user_id"].nunique()),
-                "macro_f1": round(float(macro_f1), 4),
-                "auc_roc_ovr": round(float(auc_roc), 4),
-                "feature_columns": TRAINING_FEATURE_COLUMNS,
-                "class_distribution": df["strain_level"].value_counts().to_dict(),
-                "best_params": study.best_params,
-            },
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
+    event = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "status": "deployed" if deploy else "rejected",
+        "new_data_found": new_data_found,
+        "rows_used": int(len(df)),
+        "unique_users": int(df["user_id"].nunique()),
+        "baseline_f1": round(float(baseline_f1), 4),
+        "baseline_auc": round(float(baseline_auc), 4),
+        "candidate_f1": round(float(candidate_f1), 4),
+        "candidate_auc": round(float(candidate_auc), 4),
+        "best_params": best_params,
+        "details": reasons,
+    }
 
-    print(f"\nModel saved to: {MODEL_PATH}")
-    print(f"Macro F1: {macro_f1:.4f}")
-    print(f"AUC-ROC: {auc_roc:.4f}")
-    print("Done.")
+    if deploy:
+        joblib.dump(artifact, CANDIDATE_MODEL_PATH)
+        atomic_deploy(artifact)
+
+        # persist merged data only after successful deploy
+        df.to_parquet(FEATURES_PATH, index=False)
+
+        write_report(
+            rows_used=len(df),
+            unique_users=df["user_id"].nunique(),
+            train_df=train_df,
+            test_df=test_df,
+            macro_f1=candidate_f1,
+            auc_roc=candidate_auc,
+            report=candidate_report,
+            best_params=best_params,
+        )
+
+        event["deployed_f1"] = round(float(candidate_f1), 4)
+        event["model_path"] = str(MODEL_PATH)
+        print(f"Deployed new model. F1 improved from {baseline_f1:.4f} to {candidate_f1:.4f}")
+    else:
+        print(f"Candidate rejected. Baseline F1={baseline_f1:.4f}, candidate F1={candidate_f1:.4f}")
+
+    append_retrain_log(event)
 
 
 if __name__ == "__main__":
-    train()
+    main()
