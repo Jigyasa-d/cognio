@@ -1,33 +1,71 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
-
+from app.schemas.adapt import AdaptRequest, AdaptResponse
 from app.services.ml_client import predict_strain
 from app.services.gpt_adapter import transform_content
+from app.services.retention_tracker import start_tracking
+from app.services.cache_manager import generate_cache_key, get_from_cache, set_cache
+from app.models.content_library import ContentLibrary
+from app.models.db import SessionLocal
 
 router = APIRouter()
 
 
-class AdaptRequest(BaseModel):
-    student_id: str
-    content_id: str
-    features: dict
+def build_explanation_note(prediction: dict) -> str:
+    features = prediction.get("top_features", [])
+    if not features:
+        return "Adapted based on overall performance."
+    return f"Adapted due to: {', '.join(features)}."
 
 
-@router.post("/adapt")
-def adapt(req: AdaptRequest):
-    prediction = predict_strain(
-        student_id=req.student_id,
-        content_id=req.content_id,
-        features=req.features,
-    )
+@router.post("/adapt", response_model=AdaptResponse)
+def adapt(data: AdaptRequest):
+    student_id = data.student_id
+    content_id = data.content_id
+    features = data.features.model_dump()
 
-    top_features = prediction.get("top_features", [])
-    explanation_note = f"Adapted due to: {', '.join(top_features)}"
+    prediction = predict_strain(features)
+    explanation_note = build_explanation_note(prediction)
+    strain = prediction.get("strain_level", "LOW")
+
+    cache_key = generate_cache_key(content_id, strain)
+    cached = get_from_cache(cache_key)
+
+    if cached:
+        return AdaptResponse(
+            prediction=prediction,
+            adaptation=cached,
+            explanation_note=explanation_note,
+        )
 
     adaptation = transform_content(prediction, explanation_note)
 
-    return {
-        "prediction": prediction,
-        "explanation_note": explanation_note,
-        "adaptation": adaptation,
-    }
+    set_cache(cache_key, adaptation)
+
+    db = SessionLocal()
+    try:
+        db.merge(
+            ContentLibrary(
+                cache_key=cache_key,
+                content_id=content_id,
+                strain_level=strain,
+                adapted_text=adaptation,
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    error_rate = features.get("error_rate", 0)
+    pre_accuracy = 1 - error_rate
+
+    start_tracking(
+        student_id=student_id,
+        content_id=content_id,
+        pre_accuracy=pre_accuracy,
+    )
+
+    return AdaptResponse(
+        prediction=prediction,
+        adaptation=adaptation,
+        explanation_note=explanation_note,
+    )

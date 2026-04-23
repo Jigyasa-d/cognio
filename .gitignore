@@ -1,10 +1,24 @@
-.DS_Store
-.venv/
-.vscode/
+# Python
 __pycache__/
 *.pyc
+.venv/
 
-ml/.venv/
-ml/data/raw/KT1/
-backend/cognio.db
+# Environment / secrets
 .env
+.env.*
+!.env.example
+
+# Databases
+*.db
+*.sqlite3
+
+# ML artifacts
+ml/models/
+*.joblib
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / editor files
+.DS_Store
+.vscode/
