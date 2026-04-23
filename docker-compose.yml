@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  ml:
+    build:
+      context: .
+      dockerfile: ml/Dockerfile
+    container_name: cognio-ml
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./ml:/app/ml
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: cognio-backend
+    depends_on:
+      - ml
+    environment:
+      ML_SERVICE_URL: http://ml:8001/ml/predict
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+
+  retrain:
+    build:
+      context: .
+      dockerfile: ml/Dockerfile.retrain
+    container_name: cognio-retrain
+    depends_on:
+      - ml
+    volumes:
+      - ./ml:/app/ml
+
+  frontend:
+    image: python:3.11-slim
+    container_name: cognio-frontend
+    working_dir: /app/frontend
+    command: python -m http.server 5500 --bind 0.0.0.0
+    ports:
+      - "5500:5500"
+    volumes:
+      - ./frontend:/app/frontend
+    depends_on:
+      - backend

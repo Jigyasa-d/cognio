@@ -57,6 +57,35 @@
         "drift_triggered": false,
         "drift_threshold": 0.05
       }
+    },
+    {
+      "timestamp": "2026-04-23T08:19:26.646096+00:00",
+      "status": "rejected",
+      "new_data_found": false,
+      "rows_used": 188,
+      "unique_users": 187,
+      "baseline_f1": 0.9475,
+      "baseline_auc": 0.9927,
+      "candidate_f1": 0.9475,
+      "candidate_auc": 0.9855,
+      "best_params": {
+        "n_estimators": 173,
+        "max_depth": 8,
+        "learning_rate": 0.15641947524276062,
+        "subsample": 0.8979603450090433,
+        "colsample_bytree": 0.9066806308715976,
+        "min_child_weight": 8,
+        "gamma": 1.4199937930359332,
+        "reg_alpha": 2.3484974597260253,
+        "reg_lambda": 1.6518381299615763
+      },
+      "details": {
+        "scheduled_due": false,
+        "baseline_f1": null,
+        "current_f1": 0.9475205417234402,
+        "drift_triggered": false,
+        "drift_threshold": 0.05
+      }
     }
   ]
 }

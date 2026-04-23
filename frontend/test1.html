@@ -1,17 +1,127 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Cognio Test</title>
+  <meta charset="UTF-8" />
+  <title>Cognio Live Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 980px;
+      margin: 40px auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 32px;
+    }
+
+    .content-box {
+      background: #eef2ff;
+      border-left: 5px solid #6366f1;
+      padding: 16px;
+      border-radius: 12px;
+      margin: 16px 0;
+      line-height: 1.6;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: none;
+      background: #111827;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      opacity: 0.92;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 12px;
+      overflow: auto;
+    }
+
+    #demo-log {
+      max-height: 260px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <div class="card">
+      <h1>Cognio Live Demo</h1>
+      <div class="muted">
+        Demo flow: student makes 3 wrong attempts → frontend sends behavioral features →
+        backend hits ML service → adaptation returned → overlay shown.
+      </div>
 
-<h2>Cognio Demo</h2>
+      <h3>Original content</h3>
+      <div class="content-box">
+        Photosynthesis is the process by which plants convert sunlight, water,
+        and carbon dioxide into glucose and oxygen.
+      </div>
 
-<button onclick="submitAnswer()">Submit Answer</button>
-<button onclick="useHint()">Use Hint</button>
+      <div class="button-row">
+        <button onclick="submitWrongAnswer()">Submit Wrong Answer</button>
+        <button onclick="submitCorrectAnswer()">Submit Correct Answer</button>
+        <button onclick="useHint()">Use Hint</button>
+        <button onclick="rereadContent()">Reread Content</button>
+        <button onclick="resetDemo()">Reset Demo</button>
+      </div>
+    </div>
 
-<script src="tracker.js"></script>
-<script src="cognio-overlay.js"></script>
+    <div class="card">
+      <h3>Live event log</h3>
+      <div id="demo-log"></div>
+    </div>
 
+    <div class="card">
+      <h3>Backend raw response</h3>
+      <pre id="raw-response"></pre>
+    </div>
+  </div>
+
+  <script src="cognio-overlay.js"></script>
+  <script src="tracker.js"></script>
 </body>
 </html>
