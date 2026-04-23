@@ -10,11 +10,11 @@ from app.models.db import SessionLocal
 router = APIRouter()
 
 
-def build_explanation_note(prediction: dict) -> str:
+def build_explanation_note(prediction: dict, behavior_summary: str) -> str:
     features = prediction.get("top_features", [])
     if not features:
-        return "Adapted based on overall performance."
-    return f"Adapted due to: {', '.join(features)}."
+        return f"Adapted based on current learner behavior: {behavior_summary}"
+    return f"Adapted because of {', '.join(features)}. Behavior observed: {behavior_summary}"
 
 
 @router.post("/adapt", response_model=AdaptResponse)
@@ -22,24 +22,32 @@ def adapt(data: AdaptRequest):
     student_id = data.student_id
     content_id = data.content_id
     features = data.features.model_dump()
+    behavior_summary = data.behavior_summary or "No behavior summary provided."
 
     prediction = predict_strain(features)
-    explanation_note = build_explanation_note(prediction)
     strain = prediction.get("strain_level", "LOW")
+    explanation_note = build_explanation_note(prediction, behavior_summary)
 
-    cache_key = generate_cache_key(content_id, strain)
-    cached = get_from_cache(cache_key)
+    cache_key = generate_cache_key(content_id, strain, behavior_summary)
 
-    if cached:
-        return AdaptResponse(
-            prediction=prediction,
-            adaptation=cached,
-            explanation_note=explanation_note,
-        )
+    if not data.disable_cache:
+        cached = get_from_cache(cache_key)
+        if cached:
+            return AdaptResponse(
+                prediction=prediction,
+                adaptation=cached,
+                explanation_note=explanation_note,
+            )
 
-    adaptation = transform_content(prediction, explanation_note)
+    adaptation = transform_content(
+        prediction=prediction,
+        explanation_note=explanation_note,
+        content_id=content_id,
+        behavior_summary=behavior_summary,
+    )
 
-    set_cache(cache_key, adaptation)
+    if not data.disable_cache:
+        set_cache(cache_key, adaptation)
 
     db = SessionLocal()
     try:

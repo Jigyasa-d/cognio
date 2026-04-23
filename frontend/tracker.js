@@ -2,85 +2,254 @@ const BASE_URL = "http://localhost:8000";
 
 let totalAttempts = 0;
 let wrongAttempts = 0;
+let correctAttempts = 0;
 let wrongStreak = 0;
 let hintsUsed = 0;
 let rereads = 0;
 let questionStart = Date.now();
 let latencies = [];
+let lastTriggeredState = null;
+let requestInFlight = false;
 
-function logToScreen(message) {
-  const log = document.getElementById("demo-log");
-  if (!log) return;
-
-  const line = document.createElement("div");
-  line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-  log.prepend(line);
+function avg(arr) {
+  if (!arr.length) return 0;
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
 
-function avg(values) {
-  if (!values.length) return 0;
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
+function updateMetric(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function logToScreen(message, type = "") {
+  const log = document.getElementById("demo-log");
+  if (!log) return;
+  const line = document.createElement("div");
+  line.className = `log-entry new ${type}`;
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+  log.prepend(line);
+  setTimeout(() => line.classList.remove("new"), 1500);
 }
 
 function buildFeatures() {
   const averageLatency = avg(latencies);
 
   return {
-    latency_delta: Number(averageLatency.toFixed(2)),
+    latency_delta: Number((latencies.at(-1) || 0).toFixed(2)),
     error_rate: totalAttempts === 0 ? 0 : Number((wrongAttempts / totalAttempts).toFixed(2)),
     attempt_burst: wrongStreak >= 3 ? 1 : 0,
-    attention_drop: wrongStreak >= 2 ? 1 : 0,
+    attention_drop: averageLatency >= 5000 ? 1 : 0,
     hint_reliance: totalAttempts === 0 ? 0 : Number((hintsUsed / totalAttempts).toFixed(2)),
-    cold_start_latency: latencies[0] || averageLatency || 0,
+    cold_start_latency: latencies[0] || 0,
     exit_flag_ratio: 0,
-    reread_normalized: Number((rereads / Math.max(totalAttempts, 1)).toFixed(2))
+    reread_normalized: totalAttempts === 0 ? 0 : Number((rereads / totalAttempts).toFixed(2)),
+    wrong_streak: wrongStreak,
+    total_attempts: totalAttempts,
+    hints_used: hintsUsed,
+    rereads: rereads,
+    avg_response_time: Number(averageLatency.toFixed(2)),
+    correct_attempts: correctAttempts
   };
 }
 
-async function sendLiveEvent() {
+function guessStrain(features) {
+  if (features.wrong_streak >= 3) return "HIGH";
+
+  let moderateSignals = 0;
+  if (features.hints_used >= 2 || features.hint_reliance >= 0.5) moderateSignals += 1;
+  if (features.rereads >= 2 || features.reread_normalized >= 0.5) moderateSignals += 1;
+  if (features.avg_response_time >= 5000) moderateSignals += 1;
+  if (features.error_rate >= 0.4) moderateSignals += 1;
+
+  if (moderateSignals >= 2) return "MODERATE";
+
+  return "LOW";
+}
+
+function getBehaviorSummary(features, strain) {
+  if (strain === "HIGH") {
+    return "The learner is making repeated mistakes in quick succession and appears stuck on the current concept.";
+  }
+  if (strain === "MODERATE") {
+    return "The learner shows partial confusion through hints, rereads, or slower response behavior.";
+  }
+  return "The learner is progressing steadily and may benefit from a slightly deeper explanation.";
+}
+
+function updateDashboard() {
+  const features = buildFeatures();
+  const guessed = guessStrain(features);
+
+  updateMetric("metric-attempts", totalAttempts);
+  updateMetric("metric-wrongstreak", wrongStreak);
+  updateMetric("metric-hints", hintsUsed);
+  updateMetric("metric-rereads", rereads);
+  updateMetric("metric-avgtime", `${Math.round(features.avg_response_time)} ms`);
+
+  const strainEl = document.getElementById("metric-strain");
+  if (strainEl) {
+    strainEl.textContent = guessed;
+    strainEl.className = `metric-value strain-${guessed}`;
+  }
+
+  const mcStreak = document.getElementById("mc-streak");
+  const mcHints = document.getElementById("mc-hints");
+  const mcRereads = document.getElementById("mc-rereads");
+
+  if (mcStreak) mcStreak.className = `metric-card ${wrongStreak >= 3 ? "active-high" : ""}`;
+  if (mcHints) mcHints.className = `metric-card ${hintsUsed >= 2 ? "active-moderate" : ""}`;
+  if (mcRereads) mcRereads.className = `metric-card ${rereads >= 2 ? "active-moderate" : ""}`;
+}
+
+function normalizeAdaptation(adaptation) {
+  if (!adaptation) return null;
+
+  if (typeof adaptation === "string") {
+    return adaptation;
+  }
+
+  if (typeof adaptation === "object") {
+    const parts = [];
+
+    if (adaptation.headline) parts.push(adaptation.headline);
+    if (adaptation.explanation) parts.push(adaptation.explanation);
+    if (adaptation.analogy) parts.push(`Analogy: ${adaptation.analogy}`);
+    if (Array.isArray(adaptation.steps) && adaptation.steps.length) {
+      parts.push(adaptation.steps.join(" "));
+    }
+    if (adaptation.visual_hint) parts.push(adaptation.visual_hint);
+
+    const joined = parts.join("\n\n").trim();
+    return joined || null;
+  }
+
+  return String(adaptation);
+}
+
+function showLoading() {
+  const panel = document.getElementById("adaptive-output");
+  if (!panel) return;
+
+  panel.innerHTML = `
+    <div class="companion-empty">
+      <div class="companion-icon">✦</div>
+      <p>Analysing your learning pattern…</p>
+    </div>`;
+}
+
+async function sendAdaptiveEvent(triggerReason) {
+  if (requestInFlight) return;
+  requestInFlight = true;
+
+  const features = buildFeatures();
+  const behaviorSummary = getBehaviorSummary(features, triggerReason);
+
   const payload = {
     student_id: "STU_DEMO",
     content_id: "UNIT_DEMO",
-    features: buildFeatures()
+    features,
+    behavior_summary: behaviorSummary,
+    disable_cache: true
   };
 
-  logToScreen("Sending live event to backend...");
-  console.log("REQUEST PAYLOAD:", payload);
+  logToScreen("Sending adaptive event to backend...");
+  showLoading();
 
   try {
     const response = await fetch(`${BASE_URL}/api/v1/events`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
-    console.log("BACKEND RESPONSE:", data);
+    const text = await response.text();
+    let data = {};
+
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      throw new Error(`Backend returned non-JSON response: ${text}`);
+    }
+
+    if (!response.ok) {
+      throw new Error(data?.detail || `HTTP ${response.status}`);
+    }
 
     const adapt = data?.adapt;
-    const adaptationText = adapt?.adaptation;
-    const strainLevel = adapt?.prediction?.strain_level;
-    const explanationNote = adapt?.explanation_note;
+    const backendStrain = adapt?.prediction?.strain_level || "UNKNOWN";
+    const adaptationText = normalizeAdaptation(adapt?.adaptation);
+
+    const raw = document.getElementById("raw-response");
+    if (raw) raw.textContent = JSON.stringify(data, null, 2);
 
     if (adaptationText && window.showOverlay) {
       window.showOverlay(adaptationText, {
-        strain_level: strainLevel,
-        explanation_note: explanationNote
+        strain_level: backendStrain,
+        explanation_note: adapt?.explanation_note || "",
+        behavior_summary: adapt?.behavior_summary || behaviorSummary,
+        confidence: adapt?.prediction?.confidence || ""
       });
-      logToScreen(`Adaptation received. Strain=${strainLevel}`);
-    } else {
-      logToScreen("No adaptation returned.");
-    }
 
-    const raw = document.getElementById("raw-response");
-    if (raw) {
-      raw.textContent = JSON.stringify(data, null, 2);
+      logToScreen(
+        `Adaptation received — ${backendStrain} strain, ${Math.round((adapt?.prediction?.confidence || 0) * 100)}% confidence`,
+        "success"
+      );
+    } else {
+      logToScreen("No adaptation text returned", "error");
+      if (window.showOverlay) {
+        window.showOverlay("No adaptation text returned from backend.", {
+          strain_level: backendStrain,
+          explanation_note: adapt?.explanation_note || "",
+          behavior_summary: adapt?.behavior_summary || behaviorSummary,
+          confidence: adapt?.prediction?.confidence || ""
+        });
+      }
     }
   } catch (error) {
-    console.error("SEND ERROR:", error);
-    logToScreen(`Error: ${error.message}`);
+    console.error(error);
+    logToScreen(`Error: ${error.message}`, "error");
+    if (window.showOverlay) {
+      window.showOverlay("The adaptation request failed.", {
+        strain_level: "UNKNOWN",
+        explanation_note: "Backend request failed.",
+        behavior_summary: "",
+        confidence: ""
+      });
+    }
+  } finally {
+    requestInFlight = false;
+  }
+}
+
+function maybeTriggerAdaptation(lastActionWasCorrect) {
+  const features = buildFeatures();
+  const guessed = guessStrain(features);
+
+  if (guessed === "HIGH" && lastTriggeredState !== "HIGH") {
+    lastTriggeredState = "HIGH";
+    sendAdaptiveEvent("HIGH");
+    return;
+  }
+
+  if (guessed === "MODERATE" && lastTriggeredState !== "MODERATE") {
+    lastTriggeredState = "MODERATE";
+    sendAdaptiveEvent("MODERATE");
+    return;
+  }
+
+  const stableLow =
+    guessed === "LOW" &&
+    wrongAttempts === 0 &&
+    wrongStreak === 0 &&
+    correctAttempts >= 2 &&
+    hintsUsed === 0 &&
+    rereads === 0 &&
+    lastActionWasCorrect &&
+    lastTriggeredState === null;
+
+  if (stableLow) {
+    lastTriggeredState = "LOW";
+    sendAdaptiveEvent("LOW");
   }
 }
 
@@ -88,59 +257,75 @@ function registerAttempt(isCorrect) {
   const now = Date.now();
   const responseTime = now - questionStart;
   latencies.push(responseTime);
-
   totalAttempts += 1;
 
   if (isCorrect) {
+    correctAttempts += 1;
     wrongStreak = 0;
-    logToScreen(`Correct answer submitted. Response time=${responseTime}ms`);
+    logToScreen(`✓ Correct — ${responseTime}ms`, "success");
   } else {
     wrongAttempts += 1;
     wrongStreak += 1;
-    logToScreen(`Wrong answer submitted. Wrong streak=${wrongStreak}, response time=${responseTime}ms`);
+    logToScreen(`✗ Wrong — streak=${wrongStreak}, ${responseTime}ms`, "error");
   }
 
   questionStart = Date.now();
-
-  if (wrongStreak >= 3) {
-    sendLiveEvent();
-  }
+  updateDashboard();
+  maybeTriggerAdaptation(isCorrect);
 }
 
-window.submitWrongAnswer = function () {
-  registerAttempt(false);
-};
-
-window.submitCorrectAnswer = function () {
-  registerAttempt(true);
-};
-
-window.useHint = function () {
+function useHintAction() {
   hintsUsed += 1;
-  logToScreen(`Hint used. Total hints=${hintsUsed}`);
-};
+  logToScreen(`💡 Hint used — total=${hintsUsed}`);
+  updateDashboard();
+  maybeTriggerAdaptation(false);
+}
 
-window.rereadContent = function () {
+function rereadContentAction() {
   rereads += 1;
-  logToScreen(`Student reread the content. Total rereads=${rereads}`);
-};
+  logToScreen(`↩ Reread — total=${rereads}`);
+  updateDashboard();
+  maybeTriggerAdaptation(false);
+}
 
-window.resetDemo = function () {
+function resetDemoAction() {
   totalAttempts = 0;
   wrongAttempts = 0;
+  correctAttempts = 0;
   wrongStreak = 0;
   hintsUsed = 0;
   rereads = 0;
   questionStart = Date.now();
   latencies = [];
+  lastTriggeredState = null;
+  requestInFlight = false;
 
-  if (window.hideOverlay) window.hideOverlay();
+  const log = document.getElementById("demo-log");
+  if (log) log.innerHTML = '<div class="log-entry">Waiting for interactions…</div>';
 
   const raw = document.getElementById("raw-response");
   if (raw) raw.textContent = "";
 
-  const log = document.getElementById("demo-log");
-  if (log) log.innerHTML = "";
+  if (window.clearOverlay) window.clearOverlay();
 
-  logToScreen("Demo reset.");
-};
+  updateDashboard();
+}
+
+window.addEventListener("load", () => {
+  updateDashboard();
+  if (window.clearOverlay) window.clearOverlay();
+
+  const btnWrong = document.getElementById("btn-wrong");
+  const btnCorrect = document.getElementById("btn-correct");
+  const btnHint = document.getElementById("btn-hint");
+  const btnReread = document.getElementById("btn-reread");
+  const btnReset = document.getElementById("btn-reset");
+
+  if (btnWrong) btnWrong.addEventListener("click", () => registerAttempt(false));
+  if (btnCorrect) btnCorrect.addEventListener("click", () => registerAttempt(true));
+  if (btnHint) btnHint.addEventListener("click", useHintAction);
+  if (btnReread) btnReread.addEventListener("click", rereadContentAction);
+  if (btnReset) btnReset.addEventListener("click", resetDemoAction);
+
+  console.log("Cognio tracker loaded successfully");
+});

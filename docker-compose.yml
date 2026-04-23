@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   ml:
     build:
@@ -20,7 +18,8 @@ services:
       - ml
     environment:
       ML_SERVICE_URL: http://ml:8001/ml/predict
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DEMO_DISABLE_CACHE: ${DEMO_DISABLE_CACHE}
     ports:
       - "8000:8000"
     volumes:

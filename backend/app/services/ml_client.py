@@ -1,7 +1,7 @@
 import os
 import requests
 
-ML_PREDICT_URL = os.getenv("ML_PREDICT_URL", "http://127.0.0.1:8001/ml/predict")
+ML_PREDICT_URL = os.getenv("ML_SERVICE_URL", "http://ml:8001/ml/predict")
 
 
 def predict_strain(student_id: str, content_id: str, features: dict):
