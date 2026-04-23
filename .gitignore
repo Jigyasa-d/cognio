@@ -7,3 +7,4 @@ __pycache__/
 ml/.venv/
 ml/data/raw/KT1/
 backend/cognio.db
+.env
