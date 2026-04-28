@@ -142,7 +142,15 @@ async function sendAdaptiveEvent(triggerReason) {
   requestInFlight = true;
 
   const features = buildFeatures();
-  const behaviorSummary = getBehaviorSummary(features, triggerReason);
+
+  const HINT_SUMMARIES = {
+    "HINT_REQUESTED": "The learner clicked the Hint button. Provide a direct, concrete hint for Two Sum. Nudge them toward using a hash map to store seen numbers. Do NOT give the full solution — just the next step.",
+    "HIGH":    "The learner is stuck with multiple wrong answers. Give a clear, simple hint to get unstuck.",
+    "MODERATE":"The learner is struggling. Give a supportive hint pointing toward the hash map approach.",
+    "LOW":     "The learner is doing well. Offer a brief tip about optimizing their approach."
+  };
+
+  const behaviorSummary = HINT_SUMMARIES[triggerReason] || getBehaviorSummary(features, triggerReason);
 
   const payload = {
     student_id: "STU_DEMO",
@@ -274,11 +282,64 @@ function registerAttempt(isCorrect) {
   maybeTriggerAdaptation(isCorrect);
 }
 
-function useHintAction() {
+async function useHintAction() {
   hintsUsed += 1;
   logToScreen(`💡 Hint used — total=${hintsUsed}`);
   updateDashboard();
-  maybeTriggerAdaptation(false);
+
+  if (requestInFlight) return;
+
+  // Switch to Adaptive Output tab immediately
+  const adaptTab = document.getElementById('btab-adapt');
+  if (adaptTab) adaptTab.click();
+
+  const features = buildFeatures();
+  const payload = {
+    student_id: "STU_DEMO",
+    content_id: "UNIT_DEMO",
+    features,
+    behavior_summary: "The learner explicitly clicked the hint button. Give a direct, concrete hint for the Two Sum problem. Guide them toward the hash map approach without revealing the full solution.",
+    disable_cache: true
+  };
+
+  logToScreen("Sending hint request...");
+  showLoading();
+  requestInFlight = true;
+
+  try {
+    const response = await fetch(`${BASE_URL}/api/v1/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const text = await response.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch { throw new Error("Non-JSON: " + text); }
+    if (!response.ok) throw new Error(data?.detail || `HTTP ${response.status}`);
+
+    const adapt = data?.adapt;
+    const strainLevel = adapt?.prediction?.strain_level || "LOW";
+    const adaptationText = normalizeAdaptation(adapt?.adaptation);
+
+    if (adaptationText && window.showOverlay) {
+      window.showOverlay(adaptationText, {
+        strain_level: strainLevel,
+        explanation_note: adapt?.explanation_note || "",
+        behavior_summary: adapt?.behavior_summary || "",
+        confidence: adapt?.prediction?.confidence || ""
+      });
+      logToScreen(`💡 Hint received (${strainLevel} strain)`, "success");
+    } else {
+      logToScreen("No hint text returned", "error");
+      if (window.showOverlay) window.showOverlay("No hint returned from backend.", { strain_level: strainLevel });
+    }
+  } catch (error) {
+    console.error(error);
+    logToScreen(`Hint error: ${error.message}`, "error");
+    if (window.showOverlay) window.showOverlay("Hint request failed: " + error.message, { strain_level: "UNKNOWN" });
+  } finally {
+    requestInFlight = false;
+  }
 }
 
 function rereadContentAction() {

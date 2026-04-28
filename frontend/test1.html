@@ -519,13 +519,23 @@
     /* ── CODE EDITOR ── */
     .code-area {
       flex: 1;
-      overflow-y: auto;
+      overflow: auto;
       font-family: 'Source Code Pro', 'Menlo', monospace;
-      font-size: 13.5px;
+      font-size: 13px;
       line-height: 1.7;
-      padding: 12px 0;
-      background: var(--bg2);
+      padding: 12px 16px;
+      background: var(--bg);
       position: relative;
+      color: var(--text);
+      border: none;
+      outline: none;
+      resize: none;
+      white-space: pre;
+      overflow-wrap: normal;
+      tab-size: 4;
+      caret-color: var(--text);
+      display: block;
+      box-sizing: border-box;
     }
 
     .code-area::-webkit-scrollbar { width: 8px; }
@@ -679,9 +689,9 @@
       letter-spacing: 0.3px;
       margin-bottom: 10px;
     }
-    .badge-HIGH { background: rgba(239,71,67,0.15); color: var(--red); border: 1px solid rgba(239,71,67,0.3); }
-    .badge-MODERATE { background: rgba(255,200,30,0.10); color: var(--yellow); border: 1px solid rgba(255,200,30,0.25); }
-    .badge-LOW { background: rgba(0,175,155,0.12); color: var(--green); border: 1px solid rgba(0,175,155,0.3); }
+    .badge-HIGH, .adapt-HIGH { background: rgba(239,71,67,0.15); color: var(--red); border: 1px solid rgba(239,71,67,0.3); }
+    .badge-MODERATE, .adapt-MODERATE { background: rgba(255,200,30,0.10); color: var(--yellow); border: 1px solid rgba(255,200,30,0.25); }
+    .badge-LOW, .adapt-LOW { background: rgba(0,175,155,0.12); color: var(--green); border: 1px solid rgba(0,175,155,0.3); }
 
     .adapt-title {
       font-size: 14px;
@@ -896,28 +906,21 @@
     </div>
 
     <!-- Code Editor -->
-    <div class="code-area" id="code-area">
-      <div class="code-line"><span class="line-num">1</span><span class="line-code"><span class="kw">class</span> <span class="cls">Solution</span><span class="punc">:</span></span></div>
-      <div class="code-line"><span class="line-num">2</span><span class="line-code">    <span class="kw">def</span> <span class="fn">twoSum</span><span class="punc">(</span><span class="kw">self</span>, <span class="param">nums</span><span class="punc">:</span> <span class="type">List</span><span class="bracket">[</span><span class="type">int</span><span class="bracket">]</span>, <span class="param">target</span><span class="punc">:</span> <span class="type">int</span><span class="punc">)</span> <span class="arrow">-&gt;</span> <span class="type">List</span><span class="bracket">[</span><span class="type">int</span><span class="bracket">]</span><span class="punc">:</span></span></div>
-      <div class="code-line"><span class="line-num">3</span><span class="line-code">        <span class="var">n</span><span class="punc">=</span> <span class="builtin">len</span><span class="punc">(</span><span class="var">nums</span><span class="punc">)</span></span></div>
-      <div class="code-line"><span class="line-num">4</span><span class="line-code">        <span class="var">dict1</span> <span class="punc">=</span> <span class="bracket">{}</span></span></div>
-      <div class="code-line"><span class="line-num">5</span><span class="line-code">        <span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="builtin">range</span><span class="punc">(</span><span class="var">n</span><span class="punc">):</span></span></div>
-      <div class="code-line"><span class="line-num">6</span><span class="line-code">            <span class="var">rem</span> <span class="punc">=</span> <span class="var">target</span> <span class="punc">-</span> <span class="var">nums</span><span class="bracket">[</span><span class="var">i</span><span class="bracket">]</span></span></div>
-      <div class="code-line"><span class="line-num">7</span><span class="line-code">            <span class="kw">if</span> <span class="var">rem</span> <span class="kw">in</span> <span class="var">dict1</span><span class="punc">:</span></span></div>
-      <div class="code-line"><span class="line-num">8</span><span class="line-code">                <span class="kw">return</span> <span class="bracket">[</span><span class="var">dict1</span><span class="bracket">[</span><span class="var">rem</span><span class="bracket">]</span>, <span class="var">i</span><span class="bracket">]</span></span></div>
-      <div class="code-line"><span class="line-num">9</span><span class="line-code"></span></div>
-      <div class="code-line cursor-line"><span class="line-num">10</span><span class="line-code">            <span class="var">dict1</span><span class="bracket">[</span><span class="var">nums</span><span class="bracket">[</span><span class="var">i</span><span class="bracket">]</span><span class="bracket">]</span> <span class="punc">=</span> <span class="var">i</span></span></div>
-      <div class="code-line"><span class="line-num">11</span><span class="line-code"></span></div>
-      <div class="code-line"><span class="line-num">12</span><span class="line-code"></span></div>
-      <div class="code-line"><span class="line-num">13</span><span class="line-code"></span></div>
-      <div class="code-line"><span class="line-num">14</span><span class="line-code"><span style="display:inline-block;width:2px;height:14px;background:var(--text);vertical-align:text-bottom;animation:blink 1s step-end infinite;margin-left:1px;"></span></span></div>
-      <div class="code-line"><span class="line-num">15</span><span class="line-code"></span></div>
-      <div class="code-line"><span class="line-num">16</span><span class="line-code"></span></div>
-      <div class="code-line"><span class="line-num">17</span><span class="line-code"></span></div>
-      <div class="code-line"><span class="line-num">18</span><span class="line-code"></span></div>
-      <div class="code-line"><span class="line-num">19</span><span class="line-code"></span></div>
-      <div class="code-line"><span class="line-num">20</span><span class="line-code"></span></div>
-    </div>
+    <textarea id="code-area" class="code-area" spellcheck="false"
+      style="font-family:'Source Code Pro',Menlo,monospace;font-size:13px;
+             background:var(--bg);color:var(--text);border:none;outline:none;
+             resize:none;width:100%;height:100%;padding:12px 16px;tab-size:4;
+             line-height:1.6;white-space:pre;overflow-wrap:normal;overflow:auto;
+             caret-color:var(--text);">class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        n = len(nums)
+        dict1 = {}
+        for i in range(n):
+            rem = target - nums[i]
+            if rem in dict1:
+                return [dict1[rem], i]
+            dict1[nums[i]] = i
+</textarea>
 
     <!-- Bottom panel -->
     <div class="bottom-panel">
@@ -986,23 +989,88 @@
 <script src="tracker.js"></script>
 
 <script>
-// Tab switching for bottom panel
-document.getElementById('btab-adapt').addEventListener('click', function() {
-  document.querySelectorAll('.btab').forEach(t => t.classList.remove('active'));
-  this.classList.add('active');
-  document.getElementById('testcase-content').style.display = 'none';
-  document.getElementById('adapt-area').style.display = 'block';
-});
-document.querySelector('.btab').addEventListener('click', function() {
-  document.querySelectorAll('.btab').forEach(t => t.classList.remove('active'));
-  this.classList.add('active');
-  document.getElementById('testcase-content').style.display = '';
-  document.getElementById('adapt-area').style.display = 'none';
+// ── Tab switching ────────────────────────────────────────────────────────────
+function switchToTab(tabEl) {
+  if (!tabEl) return;
+  document.querySelectorAll('.btab').forEach(function(t) { t.classList.remove('active'); });
+  tabEl.classList.add('active');
+  var isAdapt = tabEl.id === 'btab-adapt';
+  document.getElementById('testcase-content').style.display = isAdapt ? 'none' : 'block';
+  document.getElementById('adapt-area').style.display    = isAdapt ? 'block' : 'none';
+}
+
+// Wire ALL three tabs
+document.querySelectorAll('.btab').forEach(function(tab) {
+  tab.addEventListener('click', function() { switchToTab(this); });
 });
 
-// Patch adaptive output target to the bottom panel's adapt-area
-// The tracker.js writes to #adaptive-output — it's already there.
-// The simulate buttons are still #btn-wrong, #btn-correct, etc.
+// ── Two Sum judge ────────────────────────────────────────────────────────────
+function judgeCode(code) {
+  var correct = [
+    "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        n = len(nums)\n        dict1 = {}\n        for i in range(n):\n            rem = target - nums[i]\n            if rem in dict1:\n                return [dict1[rem], i]\n            dict1[nums[i]] = i",
+    "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        n = len(nums)\n        dict1 = {}\n        for i in range(n):\n            rem = target - nums[i]\n            if rem in dict1:\n                return [dict1[rem], i]\n            dict1[nums[i]] = i\n"
+  ];
+  var trimmed = code.trim();
+  return correct.indexOf(trimmed) !== -1;
+}
+
+// ── Submit result banner ─────────────────────────────────────────────────────
+function showSubmitResult(accepted) {
+  var tc = document.getElementById('testcase-content');
+  if (!tc) return;
+  // Switch to Testcase tab to show the result there
+  var testcaseTab = document.querySelector('.btab');
+  switchToTab(testcaseTab);
+  if (accepted) {
+    tc.innerHTML =
+      '<div style="color:var(--green);font-weight:700;font-size:15px;padding:10px 0 4px;">&#x2714; Accepted</div>' +
+      '<div style="color:var(--text2);font-size:12px;">Runtime: 52 ms &nbsp;&middot;&nbsp; Memory: 17.4 MB</div>' +
+      '<div style="color:var(--text2);font-size:12px;margin-top:2px;">Beats 87% of Python3 submissions</div>';
+  } else {
+    tc.innerHTML =
+      '<div style="color:var(--red);font-weight:700;font-size:15px;padding:10px 0 4px;">&#x2718; Wrong Answer</div>' +
+      '<div style="color:var(--text2);font-size:12px;">Input: nums = [2,7,11,15], target = 9</div>' +
+      '<div style="color:var(--text2);font-size:12px;">Expected: [0,1]</div>' +
+      '<div style="color:var(--yellow);font-size:11px;margin-top:8px;">&#128161; Opening Adaptive Output with a hint...</div>';
+  }
+  setTimeout(function() {
+    tc.innerHTML = '<span style="font-size:12px;color:var(--text2);">nums = [2,7,11,15], target = 9</span>';
+  }, 5000);
+}
+
+// ── Submit button ─────────────────────────────────────────────────────────────
+document.getElementById('btn-submit-nav').addEventListener('click', function() {
+  var code = (document.getElementById('code-area').value || '').trim();
+  var accepted = judgeCode(code);
+  if (accepted) {
+    registerAttempt(true);
+    showSubmitResult(true);
+  } else {
+    registerAttempt(false);
+    showSubmitResult(false);
+    // After 800ms, switch to Adaptive Output and fire GPT hint
+    setTimeout(function() {
+      switchToTab(document.getElementById('btab-adapt'));
+      sendAdaptiveEvent(wrongStreak >= 3 ? 'HIGH' : 'MODERATE');
+    }, 800);
+  }
+});
+
+// ── Hint button ────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  var btnHint = document.getElementById('btn-hint');
+  if (btnHint) {
+    // Remove old listener added by tracker.js and replace with one that also opens the tab
+    var newHint = btnHint.cloneNode(true);
+    btnHint.parentNode.replaceChild(newHint, btnHint);
+    newHint.addEventListener('click', function() {
+      hintsUsed += 1;
+      updateDashboard();
+      switchToTab(document.getElementById('btab-adapt'));
+      sendAdaptiveEvent('HINT_REQUESTED');
+    });
+  }
+});
 </script>
 </body>
 </html>
