@@ -7,10 +7,13 @@ PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "system_prompt.t
 
 CONTENT_LIBRARY = {
     "UNIT_DEMO": {
-        "title": "Photosynthesis",
+        "title": "Two Sum",
         "text": (
-            "Photosynthesis is the process by which plants convert sunlight, water, "
-            "and carbon dioxide into glucose and oxygen."
+            "Given an array of integers nums and an integer target, "
+            "return indices of the two numbers such that they add up to target.\n\n"
+            "Example:\n"
+            "Input: nums = [2,7,11,15], target = 9\n"
+            "Output: [0,1]"
         )
     }
 }

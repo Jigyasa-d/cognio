@@ -2,516 +2,1007 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Cognio — Adaptive Learning</title>
+  <title>Two Sum - LeetCode</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Menlo&family=Source+Code+Pro:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap');
+
     :root {
-      --bg: #09090f;
-      --surface: #12121c;
-      --surface2: #1a1a28;
-      --border: rgba(255,255,255,0.07);
-      --text: #e8e8f0;
-      --muted: #6b6b8a;
-      --accent: #7c6ff7;
-      --accent2: #4fd1c5;
-
-      --high: #ff6b6b;
-      --high-bg: rgba(255,107,107,0.10);
-      --high-border: rgba(255,107,107,0.25);
-
-      --moderate: #f6c90e;
-      --moderate-bg: rgba(246,201,14,0.08);
-      --moderate-border: rgba(246,201,14,0.25);
-
-      --low: #34d399;
-      --low-bg: rgba(52,211,153,0.08);
-      --low-border: rgba(52,211,153,0.25);
+      --bg: #1a1a1a;
+      --bg2: #282828;
+      --bg3: #3e3e3e;
+      --surface: #282828;
+      --surface2: #333333;
+      --border: #3e3e3e;
+      --text: #eff1f6;
+      --text2: #a8a8a8;
+      --muted: #6b6b6b;
+      --accent: #ffa116;
+      --accent-dim: rgba(255,161,22,0.15);
+      --green: #00af9b;
+      --green-bg: rgba(0,175,155,0.15);
+      --red: #ef4743;
+      --red-bg: rgba(239,71,67,0.15);
+      --blue: #5c8af5;
+      --blue-bg: rgba(92,138,245,0.12);
+      --yellow: #ffc01e;
+      --easy: #00af9b;
+      --medium: #ffb800;
+      --hard: #ff375f;
+      --tag-bg: rgba(255,255,255,0.07);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    .shell {
-      display: grid;
-      grid-template-columns: 220px 1fr 420px;
-      min-height: 100vh;
-    }
-
-    .sidebar {
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      padding: 28px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .logo {
-      font-family: 'Syne', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--text);
-      padding: 8px 12px 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .logo-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 10px var(--accent);
-    }
-
-    .nav-item {
-      padding: 10px 14px;
-      border-radius: 10px;
       font-size: 14px;
-      font-weight: 400;
-      color: var(--muted);
-      cursor: pointer;
-      transition: all 0.15s;
+      overflow: hidden;
+    }
+
+    /* ── TOP NAV ── */
+    .topnav {
+      height: 44px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      gap: 10px;
+      padding: 0 12px;
+      gap: 8px;
+      flex-shrink: 0;
     }
 
-    .nav-item:hover { background: var(--surface2); color: var(--text); }
-    .nav-item.active { background: rgba(124,111,247,0.12); color: var(--accent); }
-
-    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
-
-    .sidebar-footer {
-      margin-top: auto;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-      font-size: 12px;
-      color: var(--muted);
-      padding-left: 14px;
+    .lc-logo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 8px;
     }
 
-    .student-chip {
+    .lc-logo-icon {
+      width: 28px;
+      height: 28px;
+    }
+
+    .nav-problem-list {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .nav-problem-list:hover { background: var(--bg3); }
+
+    .nav-arrows {
+      display: flex;
+      gap: 2px;
+    }
+
+    .nav-arrow {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      transition: background 0.15s;
+    }
+    .nav-arrow:hover { background: var(--bg3); color: var(--text); }
+
+    .nav-shuffle {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      transition: background 0.15s;
+    }
+    .nav-shuffle:hover { background: var(--bg3); }
+
+    .nav-spacer { flex: 1; }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .btn-run {
+      background: var(--bg3);
+      color: var(--text2);
+    }
+    .btn-run:hover { background: #4a4a4a; color: var(--text); }
+
+    .btn-submit {
+      background: var(--green-bg);
+      color: var(--green);
+      border: 1px solid rgba(0,175,155,0.3);
+    }
+    .btn-submit:hover { background: rgba(0,175,155,0.25); }
+
+    .nav-right {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 6px;
     }
+
+    .nav-icon-btn {
+      width: 32px; height: 32px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      transition: background 0.15s;
+    }
+    .nav-icon-btn:hover { background: var(--bg3); color: var(--text); }
+
+    .timer-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text2);
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .premium-btn {
+      padding: 5px 12px;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .premium-btn:hover { background: var(--accent-dim); }
 
     .avatar {
-      width: 28px; height: 28px;
+      width: 30px; height: 30px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      font-size: 12px;
+      background: linear-gradient(135deg, #5c8af5, #7c3aed);
       display: flex; align-items: center; justify-content: center;
-      font-weight: 700;
-      color: white;
+      font-size: 12px; font-weight: 700; color: white;
+      cursor: pointer;
     }
 
-    .main {
-      padding: 32px 28px;
-      overflow-y: auto;
+    /* ── MAIN LAYOUT ── */
+    .workspace {
+      display: flex;
+      height: calc(100vh - 44px);
+      overflow: hidden;
+    }
+
+    /* ── LEFT PANEL ── */
+    .left-panel {
+      width: 50%;
+      min-width: 360px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      border-right: 1px solid var(--border);
+      background: var(--bg2);
     }
 
-    .topbar {
+    .panel-tabs {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      height: 40px;
+      flex-shrink: 0;
+      gap: 4px;
     }
 
-    .breadcrumb {
-      font-size: 13px;
-      color: var(--muted);
+    .ptab {
+      padding: 0 10px;
+      height: 40px;
       display: flex;
       align-items: center;
       gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s;
+      white-space: nowrap;
+    }
+    .ptab:hover { color: var(--text); }
+    .ptab.active {
+      color: var(--text);
+      border-bottom-color: var(--text);
+    }
+    .ptab .icon { font-size: 13px; }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px 40px;
     }
 
-    .breadcrumb span { color: var(--text); font-weight: 500; }
+    /* Scrollbar */
+    .panel-content::-webkit-scrollbar { width: 6px; }
+    .panel-content::-webkit-scrollbar-track { background: transparent; }
+    .panel-content::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
 
-    .lesson-header {
-      font-family: 'Syne', sans-serif;
-      font-size: 26px;
+    /* ── PROBLEM DESCRIPTION ── */
+    .prob-number {
+      font-size: 22px;
       font-weight: 700;
-      letter-spacing: -0.5px;
-      margin-bottom: 4px;
+      color: var(--text);
+      margin-bottom: 10px;
     }
 
-    .lesson-sub {
-      font-size: 14px;
-      color: var(--muted);
+    .prob-tags-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
     }
 
-    .content-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 24px;
-    }
-
-    .content-tag {
-      font-size: 11px;
+    .difficulty-badge {
+      font-size: 12px;
       font-weight: 600;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 12px;
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+    .diff-easy { background: rgba(0,175,155,0.15); color: var(--easy); }
+    .diff-medium { background: rgba(255,184,0,0.12); color: var(--medium); }
+    .diff-hard { background: rgba(255,55,95,0.12); color: var(--hard); }
+
+    .tag-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--tag-bg);
+      color: var(--text2);
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .tag-pill:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+
+    .prob-body {
+      color: #c4c4c4;
+      line-height: 1.8;
+      font-size: 14px;
     }
 
-    .content-text {
-      font-size: 17px;
-      line-height: 1.75;
-      color: #c8c8e0;
-      border-left: 3px solid var(--accent);
-      padding-left: 16px;
+    .prob-body p { margin-bottom: 14px; }
+
+    .prob-body strong { color: var(--text); font-weight: 600; }
+
+    .prob-body em { font-style: italic; color: var(--text); }
+
+    .prob-body code {
+      background: var(--bg3);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 13px;
+      color: var(--text);
     }
 
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
+    .example-block {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 12px 0;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 13px;
+      color: #c4c4c4;
+      line-height: 1.8;
     }
 
-    .metric-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      transition: border-color 0.3s;
-    }
-
-    .metric-card.active-high { border-color: var(--high-border); background: var(--high-bg); }
-    .metric-card.active-moderate { border-color: var(--moderate-border); background: var(--moderate-bg); }
-
-    .metric-label {
-      font-size: 11px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
+    .example-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
       margin-bottom: 8px;
     }
 
-    .metric-value {
-      font-family: 'Syne', sans-serif;
-      font-size: 24px;
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 20px 0;
+    }
+
+    .constraints-title {
+      font-size: 14px;
       font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
     }
 
-    .metric-value.strain-HIGH { color: var(--high); }
-    .metric-value.strain-MODERATE { color: var(--moderate); }
-    .metric-value.strain-LOW { color: var(--low); }
-
-    .btn-section {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 20px 24px;
+    .constraints-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
 
-    .btn-section-title {
+    .constraints-list li {
+      font-family: 'Source Code Pro', monospace;
+      font-size: 13px;
+      color: #c4c4c4;
+      padding-left: 16px;
+      position: relative;
+    }
+    .constraints-list li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--text2);
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       font-size: 12px;
+      color: var(--text2);
+    }
+
+    .stat-item .icon { font-size: 13px; }
+
+    .stat-item .val {
       font-weight: 600;
-      letter-spacing: 1px;
+      color: var(--text);
+    }
+
+    .stat-sep {
+      width: 1px;
+      height: 14px;
+      background: var(--border);
+    }
+
+    /* ── SIMULATE SECTION (replaces bottom bar) ── */
+    .simulate-bar {
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      flex-shrink: 0;
+      background: var(--surface2);
+    }
+
+    .simulate-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
-    .btn-row {
+    .simulate-btns {
       display: flex;
+      gap: 8px;
       flex-wrap: wrap;
-      gap: 10px;
     }
 
-    .btn {
+    .sim-btn {
+      padding: 6px 14px;
+      border-radius: 6px;
       border: none;
-      padding: 11px 18px;
-      border-radius: 12px;
-      cursor: pointer;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
-      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      font-family: inherit;
       transition: all 0.15s;
       display: flex;
       align-items: center;
-      gap: 7px;
-    }
-
-    .btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
-    .btn:active { transform: translateY(0); }
-
-    .btn-wrong { background: rgba(255,107,107,0.15); color: var(--high); border: 1px solid var(--high-border); }
-    .btn-correct { background: rgba(52,211,153,0.12); color: var(--low); border: 1px solid var(--low-border); }
-    .btn-hint { background: rgba(246,201,14,0.10); color: var(--moderate); border: 1px solid var(--moderate-border); }
-    .btn-reread { background: rgba(124,111,247,0.12); color: var(--accent); border: 1px solid rgba(124,111,247,0.3); }
-    .btn-reset { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-
-    .log-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 20px 24px;
-    }
-
-    .log-title {
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 12px;
-    }
-
-    .log-scroll {
-      max-height: 160px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
       gap: 5px;
     }
+    .sim-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+    .sim-btn:active { transform: translateY(0); }
 
-    .log-entry {
-      font-size: 12px;
-      color: var(--muted);
-      font-family: 'DM Mono', monospace, 'DM Sans', sans-serif;
-      padding: 4px 8px;
-      border-radius: 6px;
-      transition: color 0.2s;
-    }
+    .sim-wrong { background: rgba(239,71,67,0.15); color: var(--red); border: 1px solid rgba(239,71,67,0.3); }
+    .sim-correct { background: rgba(0,175,155,0.12); color: var(--green); border: 1px solid rgba(0,175,155,0.3); }
+    .sim-hint { background: rgba(255,200,30,0.10); color: var(--yellow); border: 1px solid rgba(255,200,30,0.25); }
+    .sim-reread { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(92,138,245,0.3); }
+    .sim-reset { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
 
-    .log-entry.new { color: var(--text); }
-    .log-entry.error { color: var(--high); }
-    .log-entry.success { color: var(--low); }
-
+    /* ── RIGHT PANEL ── */
     .right-panel {
-      background: var(--surface);
-      border-left: 1px solid var(--border);
-      padding: 28px 22px;
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      background: var(--bg2);
+      min-width: 0;
+    }
+
+    .editor-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      height: 40px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .editor-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lang-select {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .lang-select:hover { background: var(--bg3); }
+
+    .lock-icon {
+      width: 18px; height: 18px;
+      border-radius: 4px;
+      background: var(--bg3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+      color: var(--text2);
+    }
+
+    .editor-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .editor-icon-btn {
+      width: 28px; height: 28px;
+      border-radius: 5px;
+      background: transparent;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      transition: background 0.15s;
+    }
+    .editor-icon-btn:hover { background: var(--bg3); color: var(--text); }
+
+    /* ── CODE EDITOR ── */
+    .code-area {
+      flex: 1;
+      overflow-y: auto;
+      font-family: 'Source Code Pro', 'Menlo', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      padding: 12px 0;
+      background: var(--bg2);
+      position: relative;
+    }
+
+    .code-area::-webkit-scrollbar { width: 8px; }
+    .code-area::-webkit-scrollbar-track { background: transparent; }
+    .code-area::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 4px; }
+
+    .code-line {
+      display: flex;
+      align-items: flex-start;
+      min-height: 22px;
+    }
+
+    .code-line:hover { background: rgba(255,255,255,0.03); }
+
+    .line-num {
+      width: 44px;
+      text-align: right;
+      padding-right: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .line-code {
+      flex: 1;
+      white-space: pre;
+      padding-right: 20px;
+    }
+
+    /* Syntax colors */
+    .kw { color: #cc7832; }       /* keyword */
+    .fn { color: #ffc66d; }       /* function name */
+    .cls { color: #a9b7c6; }      /* class */
+    .param { color: #a9b7c6; }
+    .type { color: #a9b7c6; }
+    .str { color: #6a8759; }
+    .num { color: #6897bb; }
+    .op { color: #cc7832; }
+    .cm { color: #808080; }
+    .var { color: #a9b7c6; }
+    .builtin { color: #8888c6; }
+    .arrow { color: #a9b7c6; }
+    .bracket { color: #cc7832; }
+    .punc { color: #cc7832; }
+
+    .cursor-line { background: rgba(255,255,255,0.04); }
+
+    /* ── BOTTOM PANEL ── */
+    .bottom-panel {
+      border-top: 1px solid var(--border);
+      background: var(--bg2);
+      flex-shrink: 0;
+    }
+
+    .bottom-tabs {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 40px;
+      border-bottom: 1px solid var(--border);
+      gap: 4px;
+    }
+
+    .btab {
+      padding: 0 10px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .btab.active { color: var(--text); border-bottom-color: var(--text); }
+    .btab:hover { color: var(--text); }
+
+    .testcase-content {
+      padding: 14px 16px;
+    }
+
+    /* ── METRICS ROW ── */
+    .metrics-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0 16px 12px;
+      flex-wrap: wrap;
+    }
+
+    .metric-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .metric-chip .mlabel { color: var(--text2); }
+    .metric-chip .mval { font-weight: 700; color: var(--text); }
+    .metric-chip .mval.red { color: var(--red); }
+    .metric-chip .mval.green { color: var(--green); }
+    .metric-chip .mval.yellow { color: var(--yellow); }
+    .metric-chip .mval.strain { font-size: 11px; }
+    .metric-chip .mval.strain-HIGH { color: var(--red); }
+    .metric-chip .mval.strain-MODERATE { color: var(--yellow); }
+    .metric-chip .mval.strain-LOW { color: var(--green); }
+
+    /* ── LOG ── */
+    .log-area {
+      background: var(--bg);
+      border-radius: 6px;
+      margin: 0 16px 12px;
+      padding: 10px 12px;
+      max-height: 80px;
       overflow-y: auto;
     }
 
-    .panel-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
+    .log-area::-webkit-scrollbar { width: 4px; }
+    .log-area::-webkit-scrollbar-thumb { background: var(--bg3); }
+
+    .log-entry {
+      font-family: 'Source Code Pro', monospace;
+      font-size: 11.5px;
       color: var(--muted);
-    }
-
-    .companion-empty {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 320px;
-      text-align: center;
-      gap: 12px;
-      color: var(--muted);
-    }
-
-    .companion-icon {
-      font-size: 48px;
-      opacity: 0.3;
-    }
-
-    .companion-empty p {
-      font-size: 14px;
       line-height: 1.6;
-      max-width: 260px;
+    }
+    .log-entry.new { color: var(--text2); }
+    .log-entry.error { color: var(--red); }
+    .log-entry.success { color: var(--green); }
+
+    /* adaptive output in testcase */
+    .adapt-area {
+      padding: 12px 16px;
+      display: none;
     }
 
     .adapt-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
+      gap: 5px;
+      padding: 3px 10px;
       border-radius: 999px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.5px;
-      margin-bottom: 14px;
+      letter-spacing: 0.3px;
+      margin-bottom: 10px;
     }
-
-    .adapt-high,
-    .adapt-HIGH {
-      background: var(--high-bg);
-      color: var(--high);
-      border: 1px solid var(--high-border);
-    }
-
-    .adapt-moderate,
-    .adapt-MODERATE {
-      background: var(--moderate-bg);
-      color: var(--moderate);
-      border: 1px solid var(--moderate-border);
-    }
-
-    .adapt-low,
-    .adapt-LOW {
-      background: var(--low-bg);
-      color: var(--low);
-      border: 1px solid var(--low-border);
-    }
+    .badge-HIGH { background: rgba(239,71,67,0.15); color: var(--red); border: 1px solid rgba(239,71,67,0.3); }
+    .badge-MODERATE { background: rgba(255,200,30,0.10); color: var(--yellow); border: 1px solid rgba(255,200,30,0.25); }
+    .badge-LOW { background: rgba(0,175,155,0.12); color: var(--green); border: 1px solid rgba(0,175,155,0.3); }
 
     .adapt-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 18px;
+      font-size: 14px;
       font-weight: 700;
-      line-height: 1.3;
-      letter-spacing: -0.3px;
-      margin-bottom: 12px;
+      color: var(--text);
+      margin-bottom: 8px;
     }
 
     .adapt-text {
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.75;
-      color: #c8c8e0;
-      white-space: normal;
+      color: #c4c4c4;
     }
 
     .adapt-meta {
+      margin-top: 10px;
+      padding-top: 10px;
       border-top: 1px solid var(--border);
-      padding-top: 12px;
-      margin-top: 16px;
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--muted);
       line-height: 1.7;
     }
 
-    #raw-response {
-      display: none;
+    .online-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--text2);
+      margin-left: auto;
     }
 
-    @media (max-width: 1100px) {
-      .shell { grid-template-columns: 1fr; }
-      .sidebar { display: none; }
-      .right-panel { border-left: none; border-top: 1px solid var(--border); }
-      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .online-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
     }
+
+    #raw-response { display: none; }
   </style>
 </head>
 <body>
-<div class="shell">
 
-  <aside class="sidebar">
-    <div class="logo">
-      <div class="logo-dot"></div>
-      Cognio
+<!-- TOP NAV -->
+<nav class="topnav">
+  <div class="lc-logo">
+    <svg class="lc-logo-icon" viewBox="0 0 95 115" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M68.0655 84.3951C65.5075 86.9445 61.3716 86.9445 58.8136 84.3951L36.9329 62.6038C34.3749 60.0545 34.3749 55.9364 36.9329 53.387L58.8136 31.5957C61.3716 29.0463 65.5075 29.0463 68.0655 31.5957L72.5002 36.0175C75.0582 38.5669 75.0582 42.685 72.5002 45.2344L60.1786 57.4954L72.5002 69.7563C75.0582 72.3057 75.0582 76.4238 72.5002 78.9732L68.0655 84.3951Z" fill="#FFA116"/>
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M43.5 100.5C43.5 103.261 41.2614 105.5 38.5 105.5H24.5C21.7386 105.5 19.5 103.261 19.5 100.5V14.5C19.5 11.7386 21.7386 9.5 24.5 9.5H38.5C41.2614 9.5 43.5 11.7386 43.5 14.5V100.5Z" fill="#B3B3B3"/>
+    </svg>
+  </div>
+
+  <div class="nav-problem-list">
+    <span>☰</span> Problem List
+  </div>
+
+  <div class="nav-arrows">
+    <button class="nav-arrow">‹</button>
+    <button class="nav-arrow">›</button>
+  </div>
+  <button class="nav-shuffle">⇌</button>
+
+  <div class="nav-spacer"></div>
+
+  <!-- Center run/submit -->
+  <button class="nav-btn btn-run">
+    <span>🔥</span> Run
+  </button>
+  <button class="nav-btn btn-submit" id="btn-submit-nav">
+    <span>⬆</span> Submit
+  </button>
+
+  <div class="nav-spacer"></div>
+
+  <div class="nav-right">
+    <button class="nav-icon-btn">⊞</button>
+    <button class="nav-icon-btn">⚙</button>
+    <div class="stat-item" style="gap:4px;color:var(--text2);font-size:12px;padding:0 4px;">
+      <span>🔥</span> <span class="val">0</span>
     </div>
-    <div class="nav-item"><span class="nav-icon">⊞</span> Dashboard</div>
-    <div class="nav-item"><span class="nav-icon">📚</span> My Courses</div>
-    <div class="nav-item active"><span class="nav-icon">▶</span> Lesson Player</div>
-    <div class="nav-item"><span class="nav-icon">✦</span> Companion</div>
-    <div class="nav-item"><span class="nav-icon">◎</span> Insights</div>
+    <button class="timer-btn">⏱ 0:00</button>
+    <button class="nav-icon-btn">👤+</button>
+    <div class="avatar">J</div>
+    <button class="premium-btn">Premium</button>
+  </div>
+</nav>
 
-    <div class="sidebar-footer">
-      <div class="student-chip">
-        <div class="avatar">J</div>
-        <div>
-          <div style="font-size:13px;color:var(--text);font-weight:500">STU_DEMO</div>
-          <div>Biology · Unit 4</div>
+<!-- WORKSPACE -->
+<div class="workspace">
+
+  <!-- LEFT: Problem Description -->
+  <div class="left-panel">
+    <div class="panel-tabs">
+      <div class="ptab active"><span class="icon">📄</span> Description</div>
+      <div class="ptab"><span class="icon">📝</span> Editorial</div>
+      <div class="ptab"><span class="icon">🧪</span> Solutions</div>
+      <div class="ptab"><span class="icon">📊</span> Submissions</div>
+    </div>
+
+    <div class="panel-content">
+      <div class="prob-number">1. Two Sum</div>
+
+      <div class="prob-tags-row">
+        <span class="difficulty-badge diff-easy">Easy</span>
+        <span class="tag-pill"><span>🏷</span> Topics</span>
+        <span class="tag-pill"><span>🏢</span> Companies</span>
+        <span class="tag-pill"><span>💡</span> Hint</span>
+      </div>
+
+      <div class="prob-body">
+        <p>
+          Given an array of integers <code>nums</code> and an integer <code>target</code>, return
+          <em>indices of the two numbers such that they add up to <code>target</code></em>.
+        </p>
+        <p>
+          You may assume that each input would have <strong>exactly one solution</strong>, and you
+          may not use the <em>same</em> element twice.
+        </p>
+        <p>You can return the answer in any order.</p>
+
+        <div class="example-label">Example 1:</div>
+        <div class="example-block">
+          <strong>Input:</strong>  nums = [2,7,11,15], target = 9<br>
+          <strong>Output:</strong> [0,1]<br>
+          <strong>Explanation:</strong> Because nums[0] + nums[1] == 9, we return [0, 1].
+        </div>
+
+        <div class="example-label">Example 2:</div>
+        <div class="example-block">
+          <strong>Input:</strong>  nums = [3,2,4], target = 6<br>
+          <strong>Output:</strong> [1,2]
+        </div>
+
+        <div class="example-label">Example 3:</div>
+        <div class="example-block">
+          <strong>Input:</strong>  nums = [3,3], target = 6<br>
+          <strong>Output:</strong> [0,1]
+        </div>
+
+        <hr class="divider">
+        <div class="constraints-title">Constraints:</div>
+        <ul class="constraints-list">
+          <li>2 &lt;= nums.length &lt;= 10<sup>4</sup></li>
+          <li>-10<sup>9</sup> &lt;= nums[i] &lt;= 10<sup>9</sup></li>
+          <li>-10<sup>9</sup> &lt;= target &lt;= 10<sup>9</sup></li>
+          <li><strong>Only one valid answer exists.</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="icon">👍</span>
+        <span class="val">68.8K</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <span class="icon">👎</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <span class="icon">💬</span>
+        <span>2K</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <span class="icon">⭐</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <span class="icon">↗️</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <span class="icon">❓</span>
+      </div>
+      <div class="online-badge">
+        <div class="online-dot"></div>
+        1619 Online
+      </div>
+    </div>
+
+    <!-- Simulate bar -->
+    <div class="simulate-bar">
+      <div class="simulate-title">Simulate Learner Behavior</div>
+      <div class="simulate-btns">
+        <button class="sim-btn sim-wrong" id="btn-wrong">✗ Wrong Answer</button>
+        <button class="sim-btn sim-correct" id="btn-correct">✓ Correct Answer</button>
+        <button class="sim-btn sim-hint" id="btn-hint">💡 Use Hint</button>
+        <button class="sim-btn sim-reread" id="btn-reread">↩ Reread</button>
+        <button class="sim-btn sim-reset" id="btn-reset">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Editor -->
+  <div class="right-panel">
+    <div class="editor-topbar">
+      <div class="editor-topbar-left">
+        <button class="lang-select">Python3 ▾</button>
+        <div class="lock-icon">🔒</div>
+        <span style="font-size:12px;color:var(--text2);">Auto</span>
+      </div>
+      <div class="editor-topbar-right">
+        <button class="editor-icon-btn" title="Format">≡</button>
+        <button class="editor-icon-btn" title="Bookmark">🔖</button>
+        <button class="editor-icon-btn" title="Settings">↺</button>
+        <button class="editor-icon-btn" title="Undo">↩</button>
+        <button class="editor-icon-btn" title="Fullscreen">⤢</button>
+      </div>
+    </div>
+
+    <!-- Code Editor -->
+    <div class="code-area" id="code-area">
+      <div class="code-line"><span class="line-num">1</span><span class="line-code"><span class="kw">class</span> <span class="cls">Solution</span><span class="punc">:</span></span></div>
+      <div class="code-line"><span class="line-num">2</span><span class="line-code">    <span class="kw">def</span> <span class="fn">twoSum</span><span class="punc">(</span><span class="kw">self</span>, <span class="param">nums</span><span class="punc">:</span> <span class="type">List</span><span class="bracket">[</span><span class="type">int</span><span class="bracket">]</span>, <span class="param">target</span><span class="punc">:</span> <span class="type">int</span><span class="punc">)</span> <span class="arrow">-&gt;</span> <span class="type">List</span><span class="bracket">[</span><span class="type">int</span><span class="bracket">]</span><span class="punc">:</span></span></div>
+      <div class="code-line"><span class="line-num">3</span><span class="line-code">        <span class="var">n</span><span class="punc">=</span> <span class="builtin">len</span><span class="punc">(</span><span class="var">nums</span><span class="punc">)</span></span></div>
+      <div class="code-line"><span class="line-num">4</span><span class="line-code">        <span class="var">dict1</span> <span class="punc">=</span> <span class="bracket">{}</span></span></div>
+      <div class="code-line"><span class="line-num">5</span><span class="line-code">        <span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="builtin">range</span><span class="punc">(</span><span class="var">n</span><span class="punc">):</span></span></div>
+      <div class="code-line"><span class="line-num">6</span><span class="line-code">            <span class="var">rem</span> <span class="punc">=</span> <span class="var">target</span> <span class="punc">-</span> <span class="var">nums</span><span class="bracket">[</span><span class="var">i</span><span class="bracket">]</span></span></div>
+      <div class="code-line"><span class="line-num">7</span><span class="line-code">            <span class="kw">if</span> <span class="var">rem</span> <span class="kw">in</span> <span class="var">dict1</span><span class="punc">:</span></span></div>
+      <div class="code-line"><span class="line-num">8</span><span class="line-code">                <span class="kw">return</span> <span class="bracket">[</span><span class="var">dict1</span><span class="bracket">[</span><span class="var">rem</span><span class="bracket">]</span>, <span class="var">i</span><span class="bracket">]</span></span></div>
+      <div class="code-line"><span class="line-num">9</span><span class="line-code"></span></div>
+      <div class="code-line cursor-line"><span class="line-num">10</span><span class="line-code">            <span class="var">dict1</span><span class="bracket">[</span><span class="var">nums</span><span class="bracket">[</span><span class="var">i</span><span class="bracket">]</span><span class="bracket">]</span> <span class="punc">=</span> <span class="var">i</span></span></div>
+      <div class="code-line"><span class="line-num">11</span><span class="line-code"></span></div>
+      <div class="code-line"><span class="line-num">12</span><span class="line-code"></span></div>
+      <div class="code-line"><span class="line-num">13</span><span class="line-code"></span></div>
+      <div class="code-line"><span class="line-num">14</span><span class="line-code"><span style="display:inline-block;width:2px;height:14px;background:var(--text);vertical-align:text-bottom;animation:blink 1s step-end infinite;margin-left:1px;"></span></span></div>
+      <div class="code-line"><span class="line-num">15</span><span class="line-code"></span></div>
+      <div class="code-line"><span class="line-num">16</span><span class="line-code"></span></div>
+      <div class="code-line"><span class="line-num">17</span><span class="line-code"></span></div>
+      <div class="code-line"><span class="line-num">18</span><span class="line-code"></span></div>
+      <div class="code-line"><span class="line-num">19</span><span class="line-code"></span></div>
+      <div class="code-line"><span class="line-num">20</span><span class="line-code"></span></div>
+    </div>
+
+    <!-- Bottom panel -->
+    <div class="bottom-panel">
+      <!-- Metrics chips -->
+      <div class="metrics-row" style="padding-top:10px;">
+        <div class="metric-chip">
+          <span class="mlabel">Attempts</span>
+          <span class="mval" id="metric-attempts">0</span>
+        </div>
+        <div class="metric-chip">
+          <span class="mlabel">Wrong Streak</span>
+          <span class="mval red" id="metric-wrongstreak">0</span>
+        </div>
+        <div class="metric-chip">
+          <span class="mlabel">Hints</span>
+          <span class="mval yellow" id="metric-hints">0</span>
+        </div>
+        <div class="metric-chip">
+          <span class="mlabel">Rereads</span>
+          <span class="mval" id="metric-rereads">0</span>
+        </div>
+        <div class="metric-chip">
+          <span class="mlabel">Avg Response</span>
+          <span class="mval" id="metric-avgtime">— ms</span>
+        </div>
+        <div class="metric-chip">
+          <span class="mlabel">Strain</span>
+          <span class="mval strain" id="metric-strain">—</span>
         </div>
       </div>
-    </div>
-  </aside>
 
-  <main class="main">
-    <div class="topbar">
-      <div class="breadcrumb">
-        Biology &rsaquo; <span>Lesson 04 — Photosynthesis</span>
-      </div>
-      <div style="font-size:12px;color:var(--muted);">Live Session</div>
-    </div>
-
-    <div>
-      <div class="lesson-header">Photosynthesis</div>
-      <div class="lesson-sub">How plants convert light into energy</div>
-    </div>
-
-    <div class="content-card">
-      <div class="content-tag">📖 Reading Material</div>
-      <div class="content-text">
-        Photosynthesis is the process by which plants convert sunlight, water,
-        and carbon dioxide into glucose and oxygen.
-      </div>
-    </div>
-
-    <div class="metrics-grid">
-      <div class="metric-card" id="mc-attempts">
-        <div class="metric-label">Total Attempts</div>
-        <div class="metric-value" id="metric-attempts">0</div>
-      </div>
-      <div class="metric-card" id="mc-streak">
-        <div class="metric-label">Wrong Streak</div>
-        <div class="metric-value" id="metric-wrongstreak">0</div>
-      </div>
-      <div class="metric-card" id="mc-hints">
-        <div class="metric-label">Hints Used</div>
-        <div class="metric-value" id="metric-hints">0</div>
-      </div>
-      <div class="metric-card" id="mc-rereads">
-        <div class="metric-label">Rereads</div>
-        <div class="metric-value" id="metric-rereads">0</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Avg Response</div>
-        <div class="metric-value" id="metric-avgtime">— ms</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Predicted Strain</div>
-        <div class="metric-value" id="metric-strain" style="font-size:18px;">—</div>
-      </div>
-    </div>
-
-    <div class="btn-section">
-      <div class="btn-section-title">Simulate Learner Behavior</div>
-      <div class="btn-row">
-        <button class="btn btn-wrong" id="btn-wrong">✗ Wrong Answer</button>
-        <button class="btn btn-correct" id="btn-correct">✓ Correct Answer</button>
-        <button class="btn btn-hint" id="btn-hint">💡 Use Hint</button>
-        <button class="btn btn-reread" id="btn-reread">↩ Reread</button>
-        <button class="btn btn-reset" id="btn-reset">↺ Reset</button>
-      </div>
-    </div>
-
-    <div class="log-card">
-      <div class="log-title">Event Log</div>
-      <div class="log-scroll" id="demo-log">
+      <!-- Log -->
+      <div class="log-area" id="demo-log">
         <div class="log-entry">Waiting for interactions…</div>
       </div>
-    </div>
 
-    <pre id="raw-response"></pre>
-  </main>
+      <!-- Tabs -->
+      <div class="bottom-tabs">
+        <div class="btab active">✔ Testcase</div>
+        <div class="btab">⊞ Test Result</div>
+        <div class="btab" id="btab-adapt">✦ Adaptive Output</div>
+      </div>
 
-  <aside class="right-panel">
-    <div class="panel-label">Cognio Learning Companion</div>
-    <div id="adaptive-output">
-      <div class="companion-empty">
-        <div class="companion-icon">✦</div>
-        <p>Interact with the lesson and Cognio will adapt the explanation to your learning pattern in real time.</p>
+      <div class="testcase-content" id="testcase-content">
+        <span style="font-size:12px;color:var(--text2);">nums = [2,7,11,15], target = 9</span>
+      </div>
+
+      <div class="adapt-area" id="adapt-area">
+        <div id="adaptive-output"></div>
       </div>
     </div>
-  </aside>
+  </div>
 
 </div>
 
+<style>
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+</style>
+
+<pre id="raw-response"></pre>
+
 <script src="cognio-overlay.js"></script>
 <script src="tracker.js"></script>
+
+<script>
+// Tab switching for bottom panel
+document.getElementById('btab-adapt').addEventListener('click', function() {
+  document.querySelectorAll('.btab').forEach(t => t.classList.remove('active'));
+  this.classList.add('active');
+  document.getElementById('testcase-content').style.display = 'none';
+  document.getElementById('adapt-area').style.display = 'block';
+});
+document.querySelector('.btab').addEventListener('click', function() {
+  document.querySelectorAll('.btab').forEach(t => t.classList.remove('active'));
+  this.classList.add('active');
+  document.getElementById('testcase-content').style.display = '';
+  document.getElementById('adapt-area').style.display = 'none';
+});
+
+// Patch adaptive output target to the bottom panel's adapt-area
+// The tracker.js writes to #adaptive-output — it's already there.
+// The simulate buttons are still #btn-wrong, #btn-correct, etc.
+</script>
 </body>
 </html>
