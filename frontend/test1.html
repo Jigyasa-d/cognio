@@ -961,19 +961,78 @@
       <div class="bottom-tabs">
         <div class="btab active">✔ Testcase</div>
         <div class="btab">⊞ Test Result</div>
-        <div class="btab" id="btab-adapt">✦ Adaptive Output</div>
       </div>
 
       <div class="testcase-content" id="testcase-content">
         <span style="font-size:12px;color:var(--text2);">nums = [2,7,11,15], target = 9</span>
       </div>
+    </div>
+  </div>
 
-      <div class="adapt-area" id="adapt-area">
-        <div id="adaptive-output"></div>
+</div>
+
+<!-- ── COGNIO FLOATING WIDGET ── -->
+<div class="cognio-widget">
+  <div class="cognio-notif" id="cognio-notif">
+    <span>Let's look at this problem in a different way</span>
+  </div>
+
+  <div class="cognio-chat" id="cognio-chat">
+    <div class="cognio-chat-header">
+      <div class="cognio-chat-header-left">
+        <div class="cognio-chat-avatar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="8" width="16" height="12" rx="4" fill="#1a1a1a"/>
+            <rect x="10.25" y="2.5" width="1.5" height="4" rx="0.75" fill="#1a1a1a"/>
+            <circle cx="11" cy="2.5" r="1.4" fill="#1a1a1a"/>
+            <circle cx="9" cy="14" r="1.8" fill="#ff7a1a"/>
+            <circle cx="15" cy="14" r="1.8" fill="#ff7a1a"/>
+            <rect x="8.5" y="18" width="7" height="1.6" rx="0.8" fill="#ff7a1a"/>
+            <rect x="1.5" y="12" width="2" height="4" rx="1" fill="#1a1a1a"/>
+            <rect x="20.5" y="12" width="2" height="4" rx="1" fill="#1a1a1a"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cognio-chat-title">Cognio</div>
+          <div class="cognio-chat-subtitle">Learning companion</div>
+        </div>
+      </div>
+      <button class="cognio-chat-close" id="cognio-chat-close">✕</button>
+    </div>
+    <div class="cognio-chat-body" id="cognio-chat-body">
+      <div class="companion-empty">
+        <div class="companion-icon">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="8" width="16" height="12" rx="4" stroke="var(--accent)" stroke-width="1.6"/>
+            <rect x="10.25" y="2.5" width="1.5" height="4" rx="0.75" fill="var(--accent)"/>
+            <circle cx="11" cy="2.5" r="1.4" fill="var(--accent)"/>
+            <circle cx="9" cy="14" r="1.6" fill="var(--accent)"/>
+            <circle cx="15" cy="14" r="1.6" fill="var(--accent)"/>
+            <rect x="8.5" y="18" width="7" height="1.4" rx="0.7" fill="var(--accent)"/>
+            <rect x="1.5" y="12" width="2" height="4" rx="1" fill="var(--accent)"/>
+            <rect x="20.5" y="12" width="2" height="4" rx="1" fill="var(--accent)"/>
+          </svg>
+        </div>
+        <p>Interact with the lesson and Cognio will adapt the explanation to your learning pattern in real time.</p>
       </div>
     </div>
   </div>
 
+  <button class="cognio-icon-btn" id="cognio-icon-btn" title="Cognio">
+    <span class="cognio-icon-glyph">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="8" width="16" height="12" rx="4" fill="#1a1a1a"/>
+        <rect x="10.25" y="2.5" width="1.5" height="4" rx="0.75" fill="#1a1a1a"/>
+        <circle cx="11" cy="2.5" r="1.4" fill="#1a1a1a"/>
+        <circle cx="9" cy="14" r="1.9" fill="#ffa116"/>
+        <circle cx="15" cy="14" r="1.9" fill="#ffa116"/>
+        <rect x="8.5" y="18" width="7" height="1.7" rx="0.85" fill="#ffa116"/>
+        <rect x="1.5" y="12" width="2" height="4" rx="1" fill="#1a1a1a"/>
+        <rect x="20.5" y="12" width="2" height="4" rx="1" fill="#1a1a1a"/>
+      </svg>
+    </span>
+    <span class="cognio-icon-pulse" id="cognio-icon-pulse"></span>
+  </button>
 </div>
 
 <style>
@@ -983,10 +1042,186 @@
 }
 </style>
 
+<style>
+/* ── COGNIO FLOATING WIDGET (additive, does not touch existing layout) ── */
+.cognio-widget {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.cognio-icon-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--accent), #ff7a1a);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-top: 10px;
+  transition: transform 0.15s ease;
+}
+.cognio-icon-btn:hover { transform: scale(1.06); }
+
+.cognio-icon-glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.cognio-icon-pulse {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--red);
+  display: none;
+  box-shadow: 0 0 0 rgba(239,71,67,0.6);
+  animation: cognio-pulse 1.4s infinite;
+}
+.cognio-icon-pulse.active { display: block; }
+
+@keyframes cognio-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(239,71,67,0.55); }
+  70%  { box-shadow: 0 0 0 8px rgba(239,71,67,0); }
+  100% { box-shadow: 0 0 0 0 rgba(239,71,67,0); }
+}
+
+/* Notification bubble */
+.cognio-notif {
+  display: none;
+  align-items: center;
+  max-width: 240px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  cursor: pointer;
+  animation: cognio-notif-in 0.25s ease;
+}
+.cognio-notif.visible { display: flex; }
+
+@keyframes cognio-notif-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Chat panel */
+.cognio-chat {
+  display: none;
+  flex-direction: column;
+  width: 340px;
+  height: 420px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+  margin-bottom: 10px;
+}
+.cognio-chat.open { display: flex; }
+
+.cognio-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.cognio-chat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cognio-chat-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #ff7a1a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #1a1a1a;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.cognio-chat-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cognio-chat-subtitle {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.cognio-chat-close {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.cognio-chat-close:hover { background: var(--bg); color: var(--text); }
+
+.cognio-chat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+.cognio-chat-body::-webkit-scrollbar { width: 6px; }
+.cognio-chat-body::-webkit-scrollbar-track { background: transparent; }
+.cognio-chat-body::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+
+.cognio-chat-body .companion-empty {
+  text-align: center;
+  color: var(--text2);
+  font-size: 12.5px;
+  line-height: 1.6;
+  padding: 30px 6px;
+}
+.cognio-chat-body .companion-icon {
+  font-size: 26px;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+</style>
+
 <pre id="raw-response"></pre>
 
-<script src="cognio-overlay.js"></script>
-<script src="tracker.js"></script>
+<script src="cognio-overlay.js?v=3"></script>
+<script src="tracker.js?v=3"></script>
 
 <script>
 // ── Tab switching ────────────────────────────────────────────────────────────
@@ -994,9 +1229,7 @@ function switchToTab(tabEl) {
   if (!tabEl) return;
   document.querySelectorAll('.btab').forEach(function(t) { t.classList.remove('active'); });
   tabEl.classList.add('active');
-  var isAdapt = tabEl.id === 'btab-adapt';
-  document.getElementById('testcase-content').style.display = isAdapt ? 'none' : 'block';
-  document.getElementById('adapt-area').style.display    = isAdapt ? 'block' : 'none';
+  document.getElementById('testcase-content').style.display = 'block';
 }
 
 // Wire ALL three tabs
@@ -1031,7 +1264,7 @@ function showSubmitResult(accepted) {
       '<div style="color:var(--red);font-weight:700;font-size:15px;padding:10px 0 4px;">&#x2718; Wrong Answer</div>' +
       '<div style="color:var(--text2);font-size:12px;">Input: nums = [2,7,11,15], target = 9</div>' +
       '<div style="color:var(--text2);font-size:12px;">Expected: [0,1]</div>' +
-      '<div style="color:var(--yellow);font-size:11px;margin-top:8px;">&#128161; Opening Adaptive Output with a hint...</div>';
+      '<div style="color:var(--yellow);font-size:11px;margin-top:8px;">&#128161; Cognio is preparing a different explanation...</div>';
   }
   setTimeout(function() {
     tc.innerHTML = '<span style="font-size:12px;color:var(--text2);">nums = [2,7,11,15], target = 9</span>';
@@ -1048,9 +1281,8 @@ document.getElementById('btn-submit-nav').addEventListener('click', function() {
   } else {
     registerAttempt(false);
     showSubmitResult(false);
-    // After 800ms, switch to Adaptive Output and fire GPT hint
+    // After 800ms, fire the GPT hint — Cognio will surface it via its own widget
     setTimeout(function() {
-      switchToTab(document.getElementById('btab-adapt'));
       sendAdaptiveEvent(wrongStreak >= 3 ? 'HIGH' : 'MODERATE');
     }, 800);
   }
@@ -1066,7 +1298,6 @@ document.addEventListener('DOMContentLoaded', function() {
     newHint.addEventListener('click', function() {
       hintsUsed += 1;
       updateDashboard();
-      switchToTab(document.getElementById('btab-adapt'));
       sendAdaptiveEvent('HINT_REQUESTED');
     });
   }

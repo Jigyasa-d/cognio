@@ -127,7 +127,14 @@ function normalizeAdaptation(adaptation) {
 }
 
 function showLoading() {
-  if (window.cognioSetLoading) window.cognioSetLoading();
+  const panel = document.getElementById("adaptive-output");
+  if (!panel) return;
+
+  panel.innerHTML = `
+    <div class="companion-empty">
+      <div class="companion-icon">✦</div>
+      <p>Analysing your learning pattern…</p>
+    </div>`;
 }
 
 async function sendAdaptiveEvent(triggerReason) {
@@ -281,6 +288,10 @@ async function useHintAction() {
   updateDashboard();
 
   if (requestInFlight) return;
+
+  // Switch to Adaptive Output tab immediately
+  const adaptTab = document.getElementById('btab-adapt');
+  if (adaptTab) adaptTab.click();
 
   const features = buildFeatures();
   const payload = {
