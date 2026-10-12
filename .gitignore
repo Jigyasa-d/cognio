@@ -15,4 +15,5 @@ ml/data/interim/
 ml/data/processed/
 ml/models/
 ml/reports/
-node_modules/
+node_modules/.env
+.env
