@@ -1,777 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Two Sum - LeetCode</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Menlo&family=Source+Code+Pro:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap');
-
-    :root {
-      --bg: #1a1a1a;
-      --bg2: #282828;
-      --bg3: #3e3e3e;
-      --surface: #282828;
-      --surface2: #333333;
-      --border: #3e3e3e;
-      --text: #eff1f6;
-      --text2: #a8a8a8;
-      --muted: #6b6b6b;
-      --accent: #ffa116;
-      --accent-dim: rgba(255,161,22,0.15);
-      --green: #00af9b;
-      --green-bg: rgba(0,175,155,0.15);
-      --red: #ef4743;
-      --red-bg: rgba(239,71,67,0.15);
-      --blue: #5c8af5;
-      --blue-bg: rgba(92,138,245,0.12);
-      --yellow: #ffc01e;
-      --easy: #00af9b;
-      --medium: #ffb800;
-      --hard: #ff375f;
-      --tag-bg: rgba(255,255,255,0.07);
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      font-size: 14px;
-      overflow: hidden;
-    }
-
-    /* ── TOP NAV ── */
-    .topnav {
-      height: 44px;
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    .lc-logo {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-right: 8px;
-    }
-
-    .lc-logo-icon {
-      width: 28px;
-      height: 28px;
-    }
-
-    .nav-problem-list {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      color: var(--text2);
-      font-size: 13px;
-      font-weight: 500;
-      padding: 5px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .nav-problem-list:hover { background: var(--bg3); }
-
-    .nav-arrows {
-      display: flex;
-      gap: 2px;
-    }
-
-    .nav-arrow {
-      width: 28px; height: 28px;
-      border-radius: 6px;
-      background: transparent;
-      border: none;
-      color: var(--text2);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
-      transition: background 0.15s;
-    }
-    .nav-arrow:hover { background: var(--bg3); color: var(--text); }
-
-    .nav-shuffle {
-      width: 28px; height: 28px;
-      border-radius: 6px;
-      background: transparent;
-      border: none;
-      color: var(--text2);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px;
-      transition: background 0.15s;
-    }
-    .nav-shuffle:hover { background: var(--bg3); }
-
-    .nav-spacer { flex: 1; }
-
-    .nav-btn {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 12px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-
-    .btn-run {
-      background: var(--bg3);
-      color: var(--text2);
-    }
-    .btn-run:hover { background: #4a4a4a; color: var(--text); }
-
-    .btn-submit {
-      background: var(--green-bg);
-      color: var(--green);
-      border: 1px solid rgba(0,175,155,0.3);
-    }
-    .btn-submit:hover { background: rgba(0,175,155,0.25); }
-
-    .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .nav-icon-btn {
-      width: 32px; height: 32px;
-      border-radius: 6px;
-      background: transparent;
-      border: none;
-      color: var(--text2);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px;
-      transition: background 0.15s;
-    }
-    .nav-icon-btn:hover { background: var(--bg3); color: var(--text); }
-
-    .timer-btn {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 8px;
-      border-radius: 6px;
-      background: transparent;
-      border: none;
-      color: var(--text2);
-      font-size: 13px;
-      cursor: pointer;
-      font-family: inherit;
-    }
-
-    .premium-btn {
-      padding: 5px 12px;
-      border-radius: 6px;
-      background: transparent;
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-    .premium-btn:hover { background: var(--accent-dim); }
-
-    .avatar {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #5c8af5, #7c3aed);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 700; color: white;
-      cursor: pointer;
-    }
-
-    /* ── MAIN LAYOUT ── */
-    .workspace {
-      display: flex;
-      height: calc(100vh - 44px);
-      overflow: hidden;
-    }
-
-    /* ── LEFT PANEL ── */
-    .left-panel {
-      width: 50%;
-      min-width: 360px;
-      display: flex;
-      flex-direction: column;
-      border-right: 1px solid var(--border);
-      background: var(--bg2);
-    }
-
-    .panel-tabs {
-      display: flex;
-      align-items: center;
-      border-bottom: 1px solid var(--border);
-      padding: 0 16px;
-      height: 40px;
-      flex-shrink: 0;
-      gap: 4px;
-    }
-
-    .ptab {
-      padding: 0 10px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text2);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: color 0.15s;
-      white-space: nowrap;
-    }
-    .ptab:hover { color: var(--text); }
-    .ptab.active {
-      color: var(--text);
-      border-bottom-color: var(--text);
-    }
-    .ptab .icon { font-size: 13px; }
-
-    .panel-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px 24px 40px;
-    }
-
-    /* Scrollbar */
-    .panel-content::-webkit-scrollbar { width: 6px; }
-    .panel-content::-webkit-scrollbar-track { background: transparent; }
-    .panel-content::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
-
-    /* ── PROBLEM DESCRIPTION ── */
-    .prob-number {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 10px;
-    }
-
-    .prob-tags-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-
-    .difficulty-badge {
-      font-size: 12px;
-      font-weight: 600;
-      padding: 3px 10px;
-      border-radius: 999px;
-    }
-    .diff-easy { background: rgba(0,175,155,0.15); color: var(--easy); }
-    .diff-medium { background: rgba(255,184,0,0.12); color: var(--medium); }
-    .diff-hard { background: rgba(255,55,95,0.12); color: var(--hard); }
-
-    .tag-pill {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 10px;
-      border-radius: 6px;
-      background: var(--tag-bg);
-      color: var(--text2);
-      font-size: 12px;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .tag-pill:hover { background: rgba(255,255,255,0.12); color: var(--text); }
-
-    .prob-body {
-      color: #c4c4c4;
-      line-height: 1.8;
-      font-size: 14px;
-    }
-
-    .prob-body p { margin-bottom: 14px; }
-
-    .prob-body strong { color: var(--text); font-weight: 600; }
-
-    .prob-body em { font-style: italic; color: var(--text); }
-
-    .prob-body code {
-      background: var(--bg3);
-      padding: 1px 6px;
-      border-radius: 4px;
-      font-family: 'Source Code Pro', monospace;
-      font-size: 13px;
-      color: var(--text);
-    }
-
-    .example-block {
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 14px 16px;
-      margin: 12px 0;
-      font-family: 'Source Code Pro', monospace;
-      font-size: 13px;
-      color: #c4c4c4;
-      line-height: 1.8;
-    }
-
-    .example-label {
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-
-    .divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 20px 0;
-    }
-
-    .constraints-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 10px;
-    }
-
-    .constraints-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .constraints-list li {
-      font-family: 'Source Code Pro', monospace;
-      font-size: 13px;
-      color: #c4c4c4;
-      padding-left: 16px;
-      position: relative;
-    }
-    .constraints-list li::before {
-      content: '•';
-      position: absolute;
-      left: 0;
-      color: var(--text2);
-    }
-
-    /* ── STATS BAR ── */
-    .stats-bar {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 10px 16px;
-      border-top: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .stat-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: var(--text2);
-    }
-
-    .stat-item .icon { font-size: 13px; }
-
-    .stat-item .val {
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .stat-sep {
-      width: 1px;
-      height: 14px;
-      background: var(--border);
-    }
-
-    /* ── SIMULATE SECTION (replaces bottom bar) ── */
-    .simulate-bar {
-      border-top: 1px solid var(--border);
-      padding: 12px 16px;
-      flex-shrink: 0;
-      background: var(--surface2);
-    }
-
-    .simulate-title {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 10px;
-    }
-
-    .simulate-btns {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .sim-btn {
-      padding: 6px 14px;
-      border-radius: 6px;
-      border: none;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .sim-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
-    .sim-btn:active { transform: translateY(0); }
-
-    .sim-wrong { background: rgba(239,71,67,0.15); color: var(--red); border: 1px solid rgba(239,71,67,0.3); }
-    .sim-correct { background: rgba(0,175,155,0.12); color: var(--green); border: 1px solid rgba(0,175,155,0.3); }
-    .sim-hint { background: rgba(255,200,30,0.10); color: var(--yellow); border: 1px solid rgba(255,200,30,0.25); }
-    .sim-reread { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(92,138,245,0.3); }
-    .sim-reset { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
-
-    /* ── RIGHT PANEL ── */
-    .right-panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg2);
-      min-width: 0;
-    }
-
-    .editor-topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 12px;
-      height: 40px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .editor-topbar-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .lang-select {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 10px;
-      border-radius: 6px;
-      background: transparent;
-      border: none;
-      color: var(--text);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 0.15s;
-    }
-    .lang-select:hover { background: var(--bg3); }
-
-    .lock-icon {
-      width: 18px; height: 18px;
-      border-radius: 4px;
-      background: var(--bg3);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px;
-      color: var(--text2);
-    }
-
-    .editor-topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .editor-icon-btn {
-      width: 28px; height: 28px;
-      border-radius: 5px;
-      background: transparent;
-      border: none;
-      color: var(--text2);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px;
-      transition: background 0.15s;
-    }
-    .editor-icon-btn:hover { background: var(--bg3); color: var(--text); }
-
-    /* ── CODE EDITOR ── */
-    .code-area {
-      flex: 1;
-      overflow: auto;
-      font-family: 'Source Code Pro', 'Menlo', monospace;
-      font-size: 13px;
-      line-height: 1.7;
-      padding: 12px 16px;
-      background: var(--bg);
-      position: relative;
-      color: var(--text);
-      border: none;
-      outline: none;
-      resize: none;
-      white-space: pre;
-      overflow-wrap: normal;
-      tab-size: 4;
-      caret-color: var(--text);
-      display: block;
-      box-sizing: border-box;
-    }
-
-    .code-area::-webkit-scrollbar { width: 8px; }
-    .code-area::-webkit-scrollbar-track { background: transparent; }
-    .code-area::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 4px; }
-
-    .code-line {
-      display: flex;
-      align-items: flex-start;
-      min-height: 22px;
-    }
-
-    .code-line:hover { background: rgba(255,255,255,0.03); }
-
-    .line-num {
-      width: 44px;
-      text-align: right;
-      padding-right: 16px;
-      color: var(--muted);
-      font-size: 13px;
-      user-select: none;
-      flex-shrink: 0;
-    }
-
-    .line-code {
-      flex: 1;
-      white-space: pre;
-      padding-right: 20px;
-    }
-
-    /* Syntax colors */
-    .kw { color: #cc7832; }       /* keyword */
-    .fn { color: #ffc66d; }       /* function name */
-    .cls { color: #a9b7c6; }      /* class */
-    .param { color: #a9b7c6; }
-    .type { color: #a9b7c6; }
-    .str { color: #6a8759; }
-    .num { color: #6897bb; }
-    .op { color: #cc7832; }
-    .cm { color: #808080; }
-    .var { color: #a9b7c6; }
-    .builtin { color: #8888c6; }
-    .arrow { color: #a9b7c6; }
-    .bracket { color: #cc7832; }
-    .punc { color: #cc7832; }
-
-    .cursor-line { background: rgba(255,255,255,0.04); }
-
-    /* ── BOTTOM PANEL ── */
-    .bottom-panel {
-      border-top: 1px solid var(--border);
-      background: var(--bg2);
-      flex-shrink: 0;
-    }
-
-    .bottom-tabs {
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      height: 40px;
-      border-bottom: 1px solid var(--border);
-      gap: 4px;
-    }
-
-    .btab {
-      padding: 0 10px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text2);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-    }
-    .btab.active { color: var(--text); border-bottom-color: var(--text); }
-    .btab:hover { color: var(--text); }
-
-    .testcase-content {
-      padding: 14px 16px;
-    }
-
-    /* ── METRICS ROW ── */
-    .metrics-row {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 0 16px 12px;
-      flex-wrap: wrap;
-    }
-
-    .metric-chip {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      border-radius: 6px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      font-size: 12px;
-    }
-
-    .metric-chip .mlabel { color: var(--text2); }
-    .metric-chip .mval { font-weight: 700; color: var(--text); }
-    .metric-chip .mval.red { color: var(--red); }
-    .metric-chip .mval.green { color: var(--green); }
-    .metric-chip .mval.yellow { color: var(--yellow); }
-    .metric-chip .mval.strain { font-size: 11px; }
-    .metric-chip .mval.strain-HIGH { color: var(--red); }
-    .metric-chip .mval.strain-MODERATE { color: var(--yellow); }
-    .metric-chip .mval.strain-LOW { color: var(--green); }
-
-    /* ── LOG ── */
-    .log-area {
-      background: var(--bg);
-      border-radius: 6px;
-      margin: 0 16px 12px;
-      padding: 10px 12px;
-      max-height: 80px;
-      overflow-y: auto;
-    }
-
-    .log-area::-webkit-scrollbar { width: 4px; }
-    .log-area::-webkit-scrollbar-thumb { background: var(--bg3); }
-
-    .log-entry {
-      font-family: 'Source Code Pro', monospace;
-      font-size: 11.5px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-    .log-entry.new { color: var(--text2); }
-    .log-entry.error { color: var(--red); }
-    .log-entry.success { color: var(--green); }
-
-    /* adaptive output in testcase */
-    .adapt-area {
-      padding: 12px 16px;
-      display: none;
-    }
-
-    .adapt-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      margin-bottom: 10px;
-    }
-    .badge-HIGH, .adapt-HIGH { background: rgba(239,71,67,0.15); color: var(--red); border: 1px solid rgba(239,71,67,0.3); }
-    .badge-MODERATE, .adapt-MODERATE { background: rgba(255,200,30,0.10); color: var(--yellow); border: 1px solid rgba(255,200,30,0.25); }
-    .badge-LOW, .adapt-LOW { background: rgba(0,175,155,0.12); color: var(--green); border: 1px solid rgba(0,175,155,0.3); }
-
-    .adapt-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-
-    .adapt-text {
-      font-size: 13px;
-      line-height: 1.75;
-      color: #c4c4c4;
-    }
-
-    .adapt-meta {
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid var(--border);
-      font-size: 11.5px;
-      color: var(--muted);
-      line-height: 1.7;
-    }
-
-    .online-badge {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 12px;
-      color: var(--text2);
-      margin-left: auto;
-    }
-
-    .online-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--green);
-    }
-
-    #raw-response { display: none; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Two Sum - LeetCode</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap');
+:root{--bg:#1a1a1a;--bg2:#282828;--bg3:#3e3e3e;--surface2:#333;--border:#3e3e3e;--text:#eff1f6;--text2:#a8a8a8;--muted:#6b6b6b;--accent:#ffa116;--green:#00af9b;--red:#ef4743;--blue:#5c8af5;--yellow:#ffc01e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;font-size:14px}
+button,input,textarea{font-family:inherit}
+button{cursor:pointer}
+.topnav{height:44px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:8px}
+.lc-logo-icon{width:28px;height:28px}
+.nav-problem-list,.nav-arrow,.nav-shuffle,.nav-icon-btn,.timer-btn{color:var(--text2);background:transparent;border:0;padding:6px;border-radius:6px}
+.nav-problem-list:hover,.nav-arrow:hover,.nav-shuffle:hover,.nav-icon-btn:hover{background:var(--bg3)}
+.nav-spacer{flex:1}
+.nav-btn{padding:6px 12px;border:0;border-radius:6px;font-size:13px;font-weight:600}
+.btn-run{background:var(--bg3);color:var(--text2)}
+.btn-submit{background:#003d36;color:var(--green)}
+.nav-right{display:flex;align-items:center;gap:7px}
+.avatar{width:30px;height:30px;border-radius:50%;background:#6741d9;display:grid;place-items:center}
+.premium-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:5px 10px;border-radius:6px}
+.workspace{display:flex;height:calc(100vh - 44px)}
+.left-panel{width:50%;min-width:320px;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--bg2)}
+.panel-tabs,.bottom-tabs{height:40px;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.ptab,.btab{height:40px;display:flex;align-items:center;gap:6px;color:var(--text2);font-size:12px;white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent}
+.ptab.active,.btab.active{color:var(--text);border-bottom-color:var(--text)}
+.panel-content{flex:1;overflow:auto;padding:20px 24px 30px}
+.panel-content::-webkit-scrollbar,.cognio-chat-body::-webkit-scrollbar{width:6px}
+.panel-content::-webkit-scrollbar-thumb,.cognio-chat-body::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px}
+.prob-number{font-size:22px;font-weight:700;margin-bottom:12px}
+.prob-tags-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.difficulty-badge,.tag-pill{font-size:12px;padding:4px 10px;border-radius:6px}
+.diff-easy{background:#003d36;color:var(--green)}
+.tag-pill{background:#ffffff0d;color:var(--text2)}
+.prob-body{color:#c4c4c4;line-height:1.8}
+.prob-body p{margin-bottom:14px}
+.prob-body strong{color:var(--text)}
+.prob-body code{background:var(--bg3);padding:2px 5px;border-radius:4px}
+.example-label,.constraints-title{font-weight:700;margin:12px 0 8px}
+.example-block{background:var(--bg);padding:14px;border-radius:8px;margin:8px 0 12px;font:12px/1.9 'Source Code Pro',monospace;color:#c4c4c4;overflow-wrap:anywhere}
+.divider{border:0;border-top:1px solid var(--border);margin:18px 0}
+.constraints-list{list-style:none;color:#c4c4c4;font:12px/1.9 'Source Code Pro',monospace}
+.constraints-list li:before{content:"• ";color:var(--text2)}
+.stats-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--border);color:var(--text2);font-size:12px;flex-shrink:0}
+.online-badge{margin-left:auto}
+.online-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green)}
+.simulate-bar{border-top:1px solid var(--border);padding:12px 16px;background:var(--surface2);flex-shrink:0}
+.simulate-title{font-size:11px;font-weight:700;letter-spacing:.7px;color:var(--muted);margin-bottom:10px}
+.simulate-btns{display:flex;gap:7px;flex-wrap:wrap}
+.sim-btn{font-size:11px;font-weight:600;padding:7px 10px;border-radius:6px;background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+.sim-wrong{color:var(--red)}.sim-correct{color:var(--green)}.sim-hint{color:var(--yellow)}.sim-reread{color:var(--blue)}
+.right-panel{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg2)}
+.editor-topbar{height:40px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0}
+.lang-select,.editor-icon-btn{background:transparent;color:var(--text2);border:0;padding:6px}
+.code-area{flex:1;min-height:100px;width:100%;resize:none;outline:none;border:0;background:var(--bg);color:var(--text);padding:14px;font:13px/1.7 'Source Code Pro',monospace;white-space:pre;overflow:auto;tab-size:4}
+.bottom-panel{border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.metrics-row{display:flex;gap:5px;flex-wrap:wrap;padding:10px 12px}
+.metric-chip{display:flex;gap:6px;padding:5px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--border);font-size:11px}
+.mlabel{color:var(--text2)}.mval{font-weight:700}.red{color:var(--red)}.green{color:var(--green)}.yellow{color:var(--yellow)}
+.strain-HIGH{color:var(--red)}.strain-MODERATE{color:var(--yellow)}.strain-LOW{color:var(--green)}
+.log-area{background:var(--bg);margin:0 12px 10px;padding:8px 10px;max-height:58px;overflow:auto;border-radius:6px}
+.log-entry{font:11px/1.6 'Source Code Pro',monospace;color:var(--muted)}.log-entry.error{color:var(--red)}.log-entry.success{color:var(--green)}
+.testcase-content{padding:12px 16px;color:var(--text2);font-size:12px;min-height:45px}
+.cognio-widget{position:fixed;right:22px;bottom:22px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end}
+.cognio-icon-btn{width:52px;height:52px;border:0;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ff7a1a);box-shadow:0 6px 18px #0008;display:grid;place-items:center;position:relative}
+.cognio-icon-pulse{position:absolute;top:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:var(--red);display:none}
+.cognio-icon-pulse.active{display:block}
+.cognio-notif{display:none;max-width:240px;background:var(--surface2);border:1px solid var(--border);padding:10px 14px;border-radius:10px;color:var(--text);font-size:12px;margin-bottom:8px;cursor:pointer}
+.cognio-notif.visible{display:block}
+.cognio-chat{display:none;flex-direction:column;width:370px;height:min(600px,80vh);background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 12px 32px #0009;margin-bottom:10px}
+.cognio-chat.open{display:flex}
+.cognio-chat-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0}
+.cognio-chat-header-left{display:flex;align-items:center;gap:10px}
+.cognio-chat-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);display:grid;place-items:center;color:#1a1a1a;font-weight:700}
+.cognio-chat-title{font-size:13px;font-weight:700}.cognio-chat-subtitle{font-size:11px;color:var(--text2)}
+.cognio-chat-close{border:0;background:transparent;color:var(--text2);padding:5px}
+.cognio-chat-body{flex:1;overflow-y:auto;padding:14px;min-height:0}
+.companion-empty{text-align:center;color:var(--text2);font-size:12px;line-height:1.7;padding:24px 8px}
+.chat-message{margin-bottom:12px;max-width:100%;font-size:12.5px;line-height:1.7;overflow-wrap:anywhere;white-space:pre-wrap}
+.chat-message.user{margin-left:28px;padding:10px 12px;background:#3e3e3e;border-radius:10px 10px 3px 10px}
+.chat-message.bot{padding:10px 12px;background:#202020;border:1px solid var(--border);border-radius:10px}
+.chat-message h4{font-size:13px;color:var(--accent);margin:8px 0 4px}
+.chat-message ol,.chat-message ul{padding-left:20px;margin:5px 0}
+.chat-message p{margin:5px 0}
+.chat-message .answer{color:var(--green);font-weight:700}
+.chat-composer{border-top:1px solid var(--border);padding:10px;background:var(--bg2);flex-shrink:0}
+.chat-composer textarea{width:100%;resize:vertical;min-height:44px;max-height:100px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:12px;outline:none}
+.chat-composer-row{display:flex;align-items:center;gap:7px;margin-top:8px}
+.chat-action{border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:7px;padding:8px 10px;font-size:11px}
+.chat-action.primary{background:var(--accent);color:#1a1a1a;border-color:var(--accent);font-weight:700}
+.chat-action:disabled{opacity:.5;cursor:wait}
+.chat-file-name{flex:1;min-width:0;color:var(--text2);font-size:10px;overflow-wrap:anywhere}
+.chat-status{font-size:11px;color:var(--text2);margin-top:7px;line-height:1.5}
+.chat-image-preview{max-width:100%;max-height:100px;display:none;margin-top:8px;border-radius:6px}
+/* styles used by showOverlay() in cognio-overlay.js */
+.adapt-badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--bg3);margin-bottom:8px}
+.adapt-HIGH{color:var(--red)}.adapt-MODERATE{color:var(--yellow)}.adapt-LOW{color:var(--green)}
+.adapt-title{font-size:14px;margin-bottom:8px}
+.adapt-text{font-size:12.5px;line-height:1.7;margin-bottom:10px}
+.adapt-meta{font-size:11px;color:var(--text2);line-height:1.7;border-top:1px solid var(--border);padding-top:8px}
+/* Visual Quiz Generation (dark theme) */
+#visual-quiz-panel{margin-top:24px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text)}
+#visual-quiz-panel h3{margin:0 0 8px;font-size:15px}
+#visual-quiz-panel p{font-size:13px;color:var(--text2);margin-bottom:8px}
+#visual-quiz-panel input[type=file]{font-size:12px;color:var(--text2);max-width:100%}
+#visual-quiz-panel button{margin-top:10px;padding:9px 14px;border:0;border-radius:8px;cursor:pointer;background:var(--accent);color:#1a1a1a;font-weight:700;font-size:12px}
+#visual-quiz-panel button:disabled{opacity:.5;cursor:wait}
+#quiz-preview img{display:block;max-width:100%;max-height:220px;margin-top:10px;border-radius:8px}
+#quiz-status{margin-top:8px}
+.quiz-section{margin-top:16px}
+.quiz-section h4{color:var(--accent);font-size:14px;margin-bottom:4px}
+.quiz-section h5{font-size:12px;color:var(--text2);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.5px}
+.quiz-card{margin:10px 0;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2)}
+.quiz-card p{color:var(--text)!important}
+.quiz-card label{display:block;margin:7px 0;font-size:13px;color:var(--text)}
+.quiz-card button{background:var(--bg3)!important;color:var(--text)!important;font-weight:600!important}
+.quiz-answer{margin-top:8px;color:var(--green)!important}
+/* Bot tabs + quiz view */
+.cognio-chat-tabs{display:flex;gap:6px;padding:8px 10px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.cognio-tab{flex:1;border:1px solid var(--border);background:transparent;color:var(--text2);border-radius:7px;padding:7px 10px;font-size:11px;font-weight:600}
+.cognio-tab.active{background:var(--accent);border-color:var(--accent);color:#1a1a1a}
+.cognio-quiz-view{display:none;flex:1;min-height:0;overflow-y:auto;padding:14px}
+.cognio-quiz-view::-webkit-scrollbar{width:6px}
+.cognio-quiz-view::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px}
+.cognio-chat[data-mode="quiz"] .cognio-chat-body,.cognio-chat[data-mode="quiz"] .chat-composer{display:none}
+.cognio-chat[data-mode="quiz"] .cognio-quiz-view{display:block}
+.cognio-quiz-view #visual-quiz-panel{margin-top:0;padding:0;border:0;background:transparent}
+@media(max-width:760px){body{overflow:auto;height:auto}.topnav{gap:4px}.nav-right .premium-btn,.nav-right .timer-btn,.nav-right .nav-icon-btn{display:none}.workspace{height:auto;min-height:calc(100vh - 44px);flex-direction:column;overflow:visible}.left-panel{width:100%;min-width:0;min-height:65vh}.right-panel{min-height:65vh}.panel-content{min-height:300px}.cognio-chat{width:min(370px,calc(100vw - 30px));height:min(600px,75vh)}.stats-bar{gap:8px}.simulate-btns{gap:5px}}
+</style>
 </head>
 <body>
 
-<!-- TOP NAV -->
 <nav class="topnav">
-  <div class="lc-logo">
-    <svg class="lc-logo-icon" viewBox="0 0 95 115" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M68.0655 84.3951C65.5075 86.9445 61.3716 86.9445 58.8136 84.3951L36.9329 62.6038C34.3749 60.0545 34.3749 55.9364 36.9329 53.387L58.8136 31.5957C61.3716 29.0463 65.5075 29.0463 68.0655 31.5957L72.5002 36.0175C75.0582 38.5669 75.0582 42.685 72.5002 45.2344L60.1786 57.4954L72.5002 69.7563C75.0582 72.3057 75.0582 76.4238 72.5002 78.9732L68.0655 84.3951Z" fill="#FFA116"/>
-      <path fill-rule="evenodd" clip-rule="evenodd" d="M43.5 100.5C43.5 103.261 41.2614 105.5 38.5 105.5H24.5C21.7386 105.5 19.5 103.261 19.5 100.5V14.5C19.5 11.7386 21.7386 9.5 24.5 9.5H38.5C41.2614 9.5 43.5 11.7386 43.5 14.5V100.5Z" fill="#B3B3B3"/>
-    </svg>
-  </div>
-
-  <div class="nav-problem-list">
-    <span>☰</span> Problem List
-  </div>
-
-  <div class="nav-arrows">
-    <button class="nav-arrow">‹</button>
-    <button class="nav-arrow">›</button>
-  </div>
+  <svg class="lc-logo-icon" viewBox="0 0 95 115" fill="none" aria-label="LeetCode">
+    <path d="M68 84L37 63Q30 56 37 53L59 32Q65 26 72 36L60 57L72 70Q79 77 68 84Z" fill="#FFA116"/>
+    <rect x="19" y="10" width="24" height="96" rx="5" fill="#B3B3B3"/>
+  </svg>
+  <div class="nav-problem-list">☰ Problem List</div>
+  <button class="nav-arrow" aria-label="Previous problem">‹</button>
+  <button class="nav-arrow" aria-label="Next problem">›</button>
   <button class="nav-shuffle">⇌</button>
-
   <div class="nav-spacer"></div>
-
-  <!-- Center run/submit -->
-  <button class="nav-btn btn-run">
-    <span>🔥</span> Run
-  </button>
-  <button class="nav-btn btn-submit" id="btn-submit-nav">
-    <span>⬆</span> Submit
-  </button>
-
+  <button class="nav-btn btn-run" id="btn-run">🔥 Run</button>
+  <button class="nav-btn btn-submit" id="btn-submit-nav">⬆ Submit</button>
   <div class="nav-spacer"></div>
-
   <div class="nav-right">
     <button class="nav-icon-btn">⊞</button>
     <button class="nav-icon-btn">⚙</button>
-    <div class="stat-item" style="gap:4px;color:var(--text2);font-size:12px;padding:0 4px;">
-      <span>🔥</span> <span class="val">0</span>
-    </div>
+    <span style="font-size:12px;color:var(--text2)">🔥 0</span>
     <button class="timer-btn">⏱ 0:00</button>
     <button class="nav-icon-btn">👤+</button>
     <div class="avatar">J</div>
@@ -779,58 +157,32 @@
   </div>
 </nav>
 
-<!-- WORKSPACE -->
 <div class="workspace">
-
-  <!-- LEFT: Problem Description -->
-  <div class="left-panel">
+  <section class="left-panel">
     <div class="panel-tabs">
-      <div class="ptab active"><span class="icon">📄</span> Description</div>
-      <div class="ptab"><span class="icon">📝</span> Editorial</div>
-      <div class="ptab"><span class="icon">🧪</span> Solutions</div>
-      <div class="ptab"><span class="icon">📊</span> Submissions</div>
+      <div class="ptab active">📄 Description</div>
+      <div class="ptab">📝 Editorial</div>
+      <div class="ptab">🧪 Solutions</div>
+      <div class="ptab">📊 Submissions</div>
     </div>
-
     <div class="panel-content">
       <div class="prob-number">1. Two Sum</div>
-
       <div class="prob-tags-row">
         <span class="difficulty-badge diff-easy">Easy</span>
-        <span class="tag-pill"><span>🏷</span> Topics</span>
-        <span class="tag-pill"><span>🏢</span> Companies</span>
-        <span class="tag-pill"><span>💡</span> Hint</span>
+        <span class="tag-pill">🏷 Topics</span>
+        <span class="tag-pill">🏢 Companies</span>
+        <span class="tag-pill">💡 Hint</span>
       </div>
-
       <div class="prob-body">
-        <p>
-          Given an array of integers <code>nums</code> and an integer <code>target</code>, return
-          <em>indices of the two numbers such that they add up to <code>target</code></em>.
-        </p>
-        <p>
-          You may assume that each input would have <strong>exactly one solution</strong>, and you
-          may not use the <em>same</em> element twice.
-        </p>
+        <p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return <em>indices of the two numbers such that they add up to <code>target</code></em>.</p>
+        <p>You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the <em>same</em> element twice.</p>
         <p>You can return the answer in any order.</p>
-
         <div class="example-label">Example 1:</div>
-        <div class="example-block">
-          <strong>Input:</strong>  nums = [2,7,11,15], target = 9<br>
-          <strong>Output:</strong> [0,1]<br>
-          <strong>Explanation:</strong> Because nums[0] + nums[1] == 9, we return [0, 1].
-        </div>
-
+        <div class="example-block"><strong>Input:</strong> nums = [2,7,11,15], target = 9<br><strong>Output:</strong> [0,1]<br><strong>Explanation:</strong> nums[0] + nums[1] == 9.</div>
         <div class="example-label">Example 2:</div>
-        <div class="example-block">
-          <strong>Input:</strong>  nums = [3,2,4], target = 6<br>
-          <strong>Output:</strong> [1,2]
-        </div>
-
+        <div class="example-block"><strong>Input:</strong> nums = [3,2,4], target = 6<br><strong>Output:</strong> [1,2]</div>
         <div class="example-label">Example 3:</div>
-        <div class="example-block">
-          <strong>Input:</strong>  nums = [3,3], target = 6<br>
-          <strong>Output:</strong> [0,1]
-        </div>
-
+        <div class="example-block"><strong>Input:</strong> nums = [3,3], target = 6<br><strong>Output:</strong> [0,1]</div>
         <hr class="divider">
         <div class="constraints-title">Constraints:</div>
         <ul class="constraints-list">
@@ -840,42 +192,12 @@
           <li><strong>Only one valid answer exists.</strong></li>
         </ul>
       </div>
-    </div>
 
-    <!-- Stats bar -->
+    </div>
     <div class="stats-bar">
-      <div class="stat-item">
-        <span class="icon">👍</span>
-        <span class="val">68.8K</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-item">
-        <span class="icon">👎</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-item">
-        <span class="icon">💬</span>
-        <span>2K</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-item">
-        <span class="icon">⭐</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-item">
-        <span class="icon">↗️</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-item">
-        <span class="icon">❓</span>
-      </div>
-      <div class="online-badge">
-        <div class="online-dot"></div>
-        1619 Online
-      </div>
+      <span>👍 68.8K</span><span>│</span><span>👎</span><span>│</span><span>💬 2K</span><span>│</span><span>⭐</span><span>│</span><span>↗️</span>
+      <span class="online-badge"><span class="online-dot"></span> 1619 Online</span>
     </div>
-
-    <!-- Simulate bar -->
     <div class="simulate-bar">
       <div class="simulate-title">Simulate Learner Behavior</div>
       <div class="simulate-btns">
@@ -883,35 +205,17 @@
         <button class="sim-btn sim-correct" id="btn-correct">✓ Correct Answer</button>
         <button class="sim-btn sim-hint" id="btn-hint">💡 Use Hint</button>
         <button class="sim-btn sim-reread" id="btn-reread">↩ Reread</button>
-        <button class="sim-btn sim-reset" id="btn-reset">↺ Reset</button>
+        <button class="sim-btn" id="btn-reset">↺ Reset</button>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- RIGHT: Editor -->
-  <div class="right-panel">
+  <section class="right-panel">
     <div class="editor-topbar">
-      <div class="editor-topbar-left">
-        <button class="lang-select">Python3 ▾</button>
-        <div class="lock-icon">🔒</div>
-        <span style="font-size:12px;color:var(--text2);">Auto</span>
-      </div>
-      <div class="editor-topbar-right">
-        <button class="editor-icon-btn" title="Format">≡</button>
-        <button class="editor-icon-btn" title="Bookmark">🔖</button>
-        <button class="editor-icon-btn" title="Settings">↺</button>
-        <button class="editor-icon-btn" title="Undo">↩</button>
-        <button class="editor-icon-btn" title="Fullscreen">⤢</button>
-      </div>
+      <div><button class="lang-select">Python3 ▾</button><span style="font-size:12px;color:var(--text2)">🔒 Auto</span></div>
+      <div><button class="editor-icon-btn" title="Format">≡</button><button class="editor-icon-btn" title="Bookmark">🔖</button><button class="editor-icon-btn" title="Settings">⚙</button><button class="editor-icon-btn" title="Fullscreen">⤢</button></div>
     </div>
-
-    <!-- Code Editor -->
-    <textarea id="code-area" class="code-area" spellcheck="false"
-      style="font-family:'Source Code Pro',Menlo,monospace;font-size:13px;
-             background:var(--bg);color:var(--text);border:none;outline:none;
-             resize:none;width:100%;height:100%;padding:12px 16px;tab-size:4;
-             line-height:1.6;white-space:pre;overflow-wrap:normal;overflow:auto;
-             caret-color:var(--text);">class Solution:
+    <textarea id="code-area" class="code-area" spellcheck="false">class Solution:
     def twoSum(self, nums: List[int], target: int) -> List[int]:
         n = len(nums)
         dict1 = {}
@@ -921,384 +225,491 @@
                 return [dict1[rem], i]
             dict1[nums[i]] = i
 </textarea>
-
-    <!-- Bottom panel -->
     <div class="bottom-panel">
-      <!-- Metrics chips -->
-      <div class="metrics-row" style="padding-top:10px;">
-        <div class="metric-chip">
-          <span class="mlabel">Attempts</span>
-          <span class="mval" id="metric-attempts">0</span>
-        </div>
-        <div class="metric-chip">
-          <span class="mlabel">Wrong Streak</span>
-          <span class="mval red" id="metric-wrongstreak">0</span>
-        </div>
-        <div class="metric-chip">
-          <span class="mlabel">Hints</span>
-          <span class="mval yellow" id="metric-hints">0</span>
-        </div>
-        <div class="metric-chip">
-          <span class="mlabel">Rereads</span>
-          <span class="mval" id="metric-rereads">0</span>
-        </div>
-        <div class="metric-chip">
-          <span class="mlabel">Avg Response</span>
-          <span class="mval" id="metric-avgtime">— ms</span>
-        </div>
-        <div class="metric-chip">
-          <span class="mlabel">Strain</span>
-          <span class="mval strain" id="metric-strain">—</span>
-        </div>
+      <div class="metrics-row">
+        <div class="metric-chip"><span class="mlabel">Attempts</span><span class="mval" id="metric-attempts">0</span></div>
+        <div class="metric-chip"><span class="mlabel">Wrong Streak</span><span class="mval red" id="metric-wrongstreak">0</span></div>
+        <div class="metric-chip"><span class="mlabel">Hints</span><span class="mval yellow" id="metric-hints">0</span></div>
+        <div class="metric-chip"><span class="mlabel">Rereads</span><span class="mval" id="metric-rereads">0</span></div>
+        <div class="metric-chip"><span class="mlabel">Avg Response</span><span class="mval" id="metric-avgtime">— ms</span></div>
+        <div class="metric-chip"><span class="mlabel">Strain</span><span class="mval" id="metric-strain">—</span></div>
       </div>
-
-      <!-- Log -->
-      <div class="log-area" id="demo-log">
-        <div class="log-entry">Waiting for interactions…</div>
-      </div>
-
-      <!-- Tabs -->
-      <div class="bottom-tabs">
-        <div class="btab active">✔ Testcase</div>
-        <div class="btab">⊞ Test Result</div>
-      </div>
-
-      <div class="testcase-content" id="testcase-content">
-        <span style="font-size:12px;color:var(--text2);">nums = [2,7,11,15], target = 9</span>
-      </div>
+      <div class="log-area" id="demo-log"><div class="log-entry">Waiting for interactions…</div></div>
+      <div class="bottom-tabs"><div class="btab active">✔ Testcase</div><div class="btab">⊞ Test Result</div></div>
+      <div class="testcase-content" id="testcase-content">nums = [2,7,11,15], target = 9</div>
     </div>
-  </div>
-
+  </section>
 </div>
 
-<!-- ── COGNIO FLOATING WIDGET ── -->
+<!-- Cognio chatbot -->
 <div class="cognio-widget">
-  <div class="cognio-notif" id="cognio-notif">
-    <span>Let's look at this problem in a different way</span>
-  </div>
-
+  <div class="cognio-notif" id="cognio-notif">Let's look at this problem in a different way</div>
   <div class="cognio-chat" id="cognio-chat">
     <div class="cognio-chat-header">
       <div class="cognio-chat-header-left">
-        <div class="cognio-chat-avatar">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="4" y="8" width="16" height="12" rx="4" fill="#1a1a1a"/>
-            <rect x="10.25" y="2.5" width="1.5" height="4" rx="0.75" fill="#1a1a1a"/>
-            <circle cx="11" cy="2.5" r="1.4" fill="#1a1a1a"/>
-            <circle cx="9" cy="14" r="1.8" fill="#ff7a1a"/>
-            <circle cx="15" cy="14" r="1.8" fill="#ff7a1a"/>
-            <rect x="8.5" y="18" width="7" height="1.6" rx="0.8" fill="#ff7a1a"/>
-            <rect x="1.5" y="12" width="2" height="4" rx="1" fill="#1a1a1a"/>
-            <rect x="20.5" y="12" width="2" height="4" rx="1" fill="#1a1a1a"/>
-          </svg>
-        </div>
-        <div>
-          <div class="cognio-chat-title">Cognio</div>
-          <div class="cognio-chat-subtitle">Learning companion</div>
-        </div>
+        <div class="cognio-chat-avatar">C</div>
+        <div><div class="cognio-chat-title">Cognio</div><div class="cognio-chat-subtitle">Learning companion · Local vision solver</div></div>
       </div>
-      <button class="cognio-chat-close" id="cognio-chat-close">✕</button>
+      <button class="cognio-chat-close" id="cognio-chat-close" aria-label="Close chatbot">✕</button>
     </div>
+
+    <div class="cognio-chat-tabs" role="tablist">
+      <button type="button" class="cognio-tab active" id="cognio-tab-solver" data-mode="solver" role="tab">💬 Solver</button>
+      <button type="button" class="cognio-tab" id="cognio-tab-quiz" data-mode="quiz" role="tab">📝 Quiz</button>
+    </div>
+
     <div class="cognio-chat-body" id="cognio-chat-body">
-      <div class="companion-empty">
-        <div class="companion-icon">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="4" y="8" width="16" height="12" rx="4" stroke="var(--accent)" stroke-width="1.6"/>
-            <rect x="10.25" y="2.5" width="1.5" height="4" rx="0.75" fill="var(--accent)"/>
-            <circle cx="11" cy="2.5" r="1.4" fill="var(--accent)"/>
-            <circle cx="9" cy="14" r="1.6" fill="var(--accent)"/>
-            <circle cx="15" cy="14" r="1.6" fill="var(--accent)"/>
-            <rect x="8.5" y="18" width="7" height="1.4" rx="0.7" fill="var(--accent)"/>
-            <rect x="1.5" y="12" width="2" height="4" rx="1" fill="var(--accent)"/>
-            <rect x="20.5" y="12" width="2" height="4" rx="1" fill="var(--accent)"/>
-          </svg>
-        </div>
-        <p>Interact with the lesson and Cognio will adapt the explanation to your learning pattern in real time.</p>
+      <div class="companion-empty" id="companion-empty">
+        <div style="font-size:28px;margin-bottom:10px">🤖</div>
+        <p>Hi! I'm Cognio. I can help explain your lesson and solve questions from images.</p>
+        <p style="margin-top:10px">Upload a photo of a question or diagram below, then select <strong>Solve image</strong>. Your image is processed by the local Qwen model through Ollama.</p>
+      </div>
+    </div>
+
+    <!-- Composer sits OUTSIDE cognio-chat-body so showOverlay()/clearOverlay() never wipe it -->
+    <div class="chat-composer">
+      <textarea id="solver-prompt" placeholder="Optional: tell Cognio what to focus on (e.g. explain the graph)..."></textarea>
+      <input id="solver-image" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+      <img id="solver-preview" class="chat-image-preview" alt="Selected question preview">
+      <div class="chat-composer-row">
+        <button class="chat-action" id="solver-attach">＋ Image</button>
+        <span class="chat-file-name" id="solver-file-name">No image selected</span>
+        <button class="chat-action" id="solver-clear">Clear</button>
+      </div>
+      <div class="chat-composer-row">
+        <button class="chat-action primary" id="solver-submit" style="flex:1">Solve image ↗</button>
+      </div>
+      <div class="chat-status" id="solver-status">Local model · No model API key required</div>
+    </div>
+
+    <!-- Visual Quiz Generation (moved into the bot) -->
+    <div class="cognio-quiz-view" id="cognio-quiz-view">
+      <div id="visual-quiz-panel">
+        <h3>Visual Quiz Generation</h3>
+        <p>Upload a textbook page, printed document, or handwritten note.</p>
+        <input id="quiz-image" type="file" accept="image/jpeg,image/png,image/webp" />
+        <div id="quiz-preview"></div>
+        <button id="generate-visual-quiz" type="button">Generate Quiz</button>
+        <p id="quiz-status" role="status"></p>
+        <div id="quiz-results"></div>
       </div>
     </div>
   </div>
 
-  <button class="cognio-icon-btn" id="cognio-icon-btn" title="Cognio">
-    <span class="cognio-icon-glyph">
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="8" width="16" height="12" rx="4" fill="#1a1a1a"/>
-        <rect x="10.25" y="2.5" width="1.5" height="4" rx="0.75" fill="#1a1a1a"/>
-        <circle cx="11" cy="2.5" r="1.4" fill="#1a1a1a"/>
-        <circle cx="9" cy="14" r="1.9" fill="#ffa116"/>
-        <circle cx="15" cy="14" r="1.9" fill="#ffa116"/>
-        <rect x="8.5" y="18" width="7" height="1.7" rx="0.85" fill="#ffa116"/>
-        <rect x="1.5" y="12" width="2" height="4" rx="1" fill="#1a1a1a"/>
-        <rect x="20.5" y="12" width="2" height="4" rx="1" fill="#1a1a1a"/>
-      </svg>
-    </span>
+  <button class="cognio-icon-btn" id="cognio-icon-btn" title="Open Cognio" aria-label="Open Cognio">
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
+      <rect x="4" y="8" width="16" height="12" rx="4" fill="#1a1a1a"/>
+      <rect x="10.25" y="2.5" width="1.5" height="4" rx=".75" fill="#1a1a1a"/>
+      <circle cx="11" cy="2.5" r="1.4" fill="#1a1a1a"/>
+      <circle cx="9" cy="14" r="1.9" fill="#ffa116"/>
+      <circle cx="15" cy="14" r="1.9" fill="#ffa116"/>
+      <rect x="8.5" y="18" width="7" height="1.7" rx=".85" fill="#ffa116"/>
+    </svg>
     <span class="cognio-icon-pulse" id="cognio-icon-pulse"></span>
   </button>
 </div>
 
-<style>
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-</style>
+<pre id="raw-response" hidden></pre>
 
-<style>
-/* ── COGNIO FLOATING WIDGET (additive, does not touch existing layout) ── */
-.cognio-widget {
-  position: fixed;
-  right: 22px;
-  bottom: 22px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-.cognio-icon-btn {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  background: linear-gradient(135deg, var(--accent), #ff7a1a);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  margin-top: 10px;
-  transition: transform 0.15s ease;
-}
-.cognio-icon-btn:hover { transform: scale(1.06); }
-
-.cognio-icon-glyph {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 0;
-}
-
-.cognio-icon-pulse {
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--red);
-  display: none;
-  box-shadow: 0 0 0 rgba(239,71,67,0.6);
-  animation: cognio-pulse 1.4s infinite;
-}
-.cognio-icon-pulse.active { display: block; }
-
-@keyframes cognio-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(239,71,67,0.55); }
-  70%  { box-shadow: 0 0 0 8px rgba(239,71,67,0); }
-  100% { box-shadow: 0 0 0 0 rgba(239,71,67,0); }
-}
-
-/* Notification bubble */
-.cognio-notif {
-  display: none;
-  align-items: center;
-  max-width: 240px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-size: 12.5px;
-  line-height: 1.5;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border-bottom-right-radius: 4px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-  cursor: pointer;
-  animation: cognio-notif-in 0.25s ease;
-}
-.cognio-notif.visible { display: flex; }
-
-@keyframes cognio-notif-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Chat panel */
-.cognio-chat {
-  display: none;
-  flex-direction: column;
-  width: 340px;
-  height: 420px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
-  margin-bottom: 10px;
-}
-.cognio-chat.open { display: flex; }
-
-.cognio-chat-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  background: var(--bg3);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.cognio-chat-header-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.cognio-chat-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #ff7a1a);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: #1a1a1a;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.cognio-chat-title {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.cognio-chat-subtitle {
-  font-size: 11px;
-  color: var(--text2);
-}
-
-.cognio-chat-close {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: var(--text2);
-  cursor: pointer;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-}
-.cognio-chat-close:hover { background: var(--bg); color: var(--text); }
-
-.cognio-chat-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-}
-.cognio-chat-body::-webkit-scrollbar { width: 6px; }
-.cognio-chat-body::-webkit-scrollbar-track { background: transparent; }
-.cognio-chat-body::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
-
-.cognio-chat-body .companion-empty {
-  text-align: center;
-  color: var(--text2);
-  font-size: 12.5px;
-  line-height: 1.6;
-  padding: 30px 6px;
-}
-.cognio-chat-body .companion-icon {
-  font-size: 26px;
-  color: var(--accent);
-  margin-bottom: 10px;
-}
-</style>
-
-<pre id="raw-response"></pre>
-
-<script src="cognio-overlay.js?v=3"></script>
-<script src="tracker.js?v=3"></script>
+<!-- cognio-overlay.js owns chat open/close (icon, ✕, notification). Do NOT add a second handler here. -->
+<script src="cognio-overlay.js?v=5"></script>
+<script src="tracker.js?v=5"></script>
 
 <script>
-// ── Tab switching ────────────────────────────────────────────────────────────
-function switchToTab(tabEl) {
-  if (!tabEl) return;
-  document.querySelectorAll('.btab').forEach(function(t) { t.classList.remove('active'); });
-  tabEl.classList.add('active');
-  document.getElementById('testcase-content').style.display = 'block';
+/* ---------------- Visual question solver ---------------- */
+(function () {
+  const API_URL = "http://localhost:8000/api/v1/visual/solve";
+  const imageInput = document.getElementById("solver-image");
+  const attachButton = document.getElementById("solver-attach");
+  const clearButton = document.getElementById("solver-clear");
+  const submitButton = document.getElementById("solver-submit");
+  const promptInput = document.getElementById("solver-prompt");
+  const preview = document.getElementById("solver-preview");
+  const fileName = document.getElementById("solver-file-name");
+  const status = document.getElementById("solver-status");
+  const chatBody = document.getElementById("cognio-chat-body");
+  const IDLE = "Local model · No model API key required";
+
+  let selectedImage = null;
+
+  function clearEmptyState() {
+    const empty = chatBody.querySelector(".companion-empty");
+    if (empty) empty.remove();
+  }
+
+  function addMessage(type, text) {
+    clearEmptyState();
+    const message = document.createElement("div");
+    message.className = "chat-message " + type;
+    message.textContent = text;
+    chatBody.appendChild(message);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    return message;
+  }
+
+  function addSolution(result) {
+    clearEmptyState();
+    const card = document.createElement("div");
+    card.className = "chat-message bot";
+
+    function addText(tag, text, className) {
+      const el = document.createElement(tag);
+      el.textContent = text || "";
+      if (className) el.className = className;
+      card.appendChild(el);
+      return el;
+    }
+
+    // Simple backend format: { "answer": "..." }
+    if (typeof result.answer === "string" && !result.steps && !result.final_answer) {
+      addText("h4", "Solution");
+      addText("p", result.answer);
+    } else {
+      // Structured format: question / explanation / steps / final_answer
+      if (result.question) {
+        addText("h4", "Question identified");
+        addText("p", result.question);
+      }
+      if (result.needs_clarification) {
+        addText("h4", "Need a clearer image");
+        addText("p", result.clarification_message || "Please upload a clearer image showing the complete question.");
+      } else {
+        if (result.explanation) {
+          addText("h4", "Explanation");
+          addText("p", result.explanation);
+        }
+        if (Array.isArray(result.steps) && result.steps.length) {
+          addText("h4", "Step-by-step solution");
+          const list = document.createElement("ol");
+          result.steps.forEach(function (step) {
+            const li = document.createElement("li");
+            li.textContent = step;
+            list.appendChild(li);
+          });
+          card.appendChild(list);
+        }
+        if (result.final_answer) {
+          addText("h4", "Final answer");
+          addText("p", result.final_answer, "answer");
+        }
+        if (result.practice_question) {
+          addText("h4", "Try a similar question");
+          addText("p", result.practice_question.question);
+          addText("p", "Answer: " + result.practice_question.answer);
+        }
+      }
+    }
+
+    chatBody.appendChild(card);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  function resetImage() {
+    selectedImage = null;
+    imageInput.value = "";
+    preview.removeAttribute("src");
+    preview.style.display = "none";
+    fileName.textContent = "No image selected";
+    status.textContent = IDLE;
+  }
+
+  attachButton.addEventListener("click", function () { imageInput.click(); });
+
+  imageInput.addEventListener("change", function () {
+    const file = imageInput.files && imageInput.files[0];
+    if (!file) return;
+
+    if (["image/png", "image/jpeg", "image/webp"].indexOf(file.type) === -1) {
+      resetImage();
+      status.textContent = "Please choose a PNG, JPG or WEBP image.";
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      resetImage();
+      status.textContent = "Image must be 10 MB or smaller.";
+      return;
+    }
+
+    selectedImage = file;
+    fileName.textContent = file.name;
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+    status.textContent = "Image ready. Click Solve image.";
+  });
+
+  clearButton.addEventListener("click", resetImage);
+
+  submitButton.addEventListener("click", async function () {
+    if (!selectedImage) {
+      status.textContent = "Please attach an image of your question first.";
+      imageInput.click();
+      return;
+    }
+
+    const extraPrompt = promptInput.value.trim();
+    addMessage("user", "Please solve this image." + (extraPrompt ? " Focus: " + extraPrompt : ""));
+    const loadingMessage = addMessage("bot", "Reading the image and working through the solution…");
+
+    submitButton.disabled = true;
+    attachButton.disabled = true;
+    clearButton.disabled = true;
+    status.textContent = "Waiting for the local Qwen model. The first request may take longer.";
+
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedImage, selectedImage.name);
+      formData.append("question", extraPrompt);   // backend reads this optional field
+
+      const response = await fetch(API_URL, { method: "POST", body: formData });
+      const responseText = await response.text();
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (_) {
+        throw new Error("The backend returned an unreadable response. Check that the solver endpoint is running.");
+      }
+
+      if (!response.ok) {
+        const detail = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail || data);
+        throw new Error(detail || ("Request failed with status " + response.status));
+      }
+
+      loadingMessage.remove();
+      addSolution(data);
+      status.textContent = "Solution generated by the local vision model.";
+    } catch (error) {
+      const detail = error && error.message ? error.message : "Unknown error";
+      loadingMessage.textContent = detail.includes("Failed to fetch")
+        ? "Cannot reach Cognio's backend. Make sure Docker services are running and the backend is available at http://localhost:8000."
+        : "Solver error: " + detail;
+      status.textContent = "Check the backend and Ollama logs if the problem continues.";
+    } finally {
+      submitButton.disabled = false;
+      attachButton.disabled = false;
+      clearButton.disabled = false;
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+  });
+})();
+
+/* ---------------- Visual quiz generation ---------------- */
+(function () {
+  const fileInput = document.getElementById("quiz-image");
+  const preview = document.getElementById("quiz-preview");
+  const generateButton = document.getElementById("generate-visual-quiz");
+  const status = document.getElementById("quiz-status");
+  const results = document.getElementById("quiz-results");
+  const API_URL = "http://localhost:8000/api/v1/visual-quiz/generate";
+  const TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+  fileInput.addEventListener("change", () => {
+    preview.replaceChildren();
+    results.replaceChildren();
+    status.textContent = "";
+    const file = fileInput.files[0];
+    if (!file) return;
+    if (!TYPES.includes(file.type)) { status.textContent = "Please choose a JPG, PNG or WEBP image."; fileInput.value = ""; return; }
+    if (file.size > 10 * 1024 * 1024) { status.textContent = "Image must be 10 MB or smaller."; fileInput.value = ""; return; }
+    const image = document.createElement("img");
+    image.alt = "Preview of uploaded study material";
+    image.src = URL.createObjectURL(file);
+    preview.appendChild(image);
+  });
+
+  generateButton.addEventListener("click", async () => {
+    const file = fileInput.files[0];
+    if (!file) { status.textContent = "Please upload an image first."; return; }
+
+    generateButton.disabled = true;
+    status.textContent = "Reading the page and generating questions...";
+    results.replaceChildren();
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(API_URL, { method: "POST", body: formData });
+      let data = {};
+      try { data = await response.json(); } catch (_) {}
+      if (!response.ok) {
+        const d = data.detail;
+        throw new Error(typeof d === "string" ? d : "Quiz generation failed.");
+      }
+      renderQuiz(data);
+      status.textContent = "Quiz generated successfully.";
+    } catch (error) {
+      status.textContent = (error.message && error.message !== "Failed to fetch")
+        ? error.message
+        : "Could not connect to Cognio's local quiz service.";
+    } finally {
+      generateButton.disabled = false;
+    }
+  });
+
+  function toggleCard(card, revealLabel, hideLabel, text) {
+    const reveal = document.createElement("button");
+    reveal.type = "button";
+    reveal.textContent = revealLabel;
+    const answer = document.createElement("p");
+    answer.className = "quiz-answer";
+    answer.hidden = true;
+    answer.textContent = text;
+    reveal.addEventListener("click", () => {
+      answer.hidden = !answer.hidden;
+      reveal.textContent = answer.hidden ? revealLabel : hideLabel;
+    });
+    card.append(reveal, answer);
+  }
+
+  function renderQuiz(data) {
+    results.replaceChildren();
+
+    ["easy", "medium", "hard"].forEach(level => {
+      const questions = data[level] || {};
+      const mcqs = Array.isArray(questions.mcqs) ? questions.mcqs : [];
+      const conceptual = Array.isArray(questions.conceptual) ? questions.conceptual : [];
+      if (!mcqs.length && !conceptual.length) return;
+
+      const section = document.createElement("section");
+      section.className = "quiz-section";
+
+      const heading = document.createElement("h4");
+      heading.textContent = level.charAt(0).toUpperCase() + level.slice(1) + " Difficulty";
+      section.appendChild(heading);
+
+      if (mcqs.length) {
+        const h = document.createElement("h5");
+        h.textContent = "Multiple-Choice Questions";
+        section.appendChild(h);
+      }
+
+      mcqs.forEach((question, index) => {
+        const card = document.createElement("div");
+        card.className = "quiz-card";
+        const prompt = document.createElement("p");
+        prompt.textContent = (index + 1) + ". " + question.question;
+        card.appendChild(prompt);
+
+        const groupName = "quiz-" + level + "-" + index;
+        (Array.isArray(question.options) ? question.options : []).forEach(option => {
+          const label = document.createElement("label");
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.name = groupName;
+          radio.value = option;
+          label.appendChild(radio);
+          label.appendChild(document.createTextNode(" " + option));
+          card.appendChild(label);
+        });
+
+        toggleCard(card, "Show Answer", "Hide Answer",
+          "Answer: " + question.answer + (question.explanation ? " — " + question.explanation : ""));
+        section.appendChild(card);
+      });
+
+      if (conceptual.length) {
+        const h = document.createElement("h5");
+        h.textContent = "Conceptual Questions";
+        section.appendChild(h);
+      }
+
+      conceptual.forEach((question, index) => {
+        const card = document.createElement("div");
+        card.className = "quiz-card";
+        const prompt = document.createElement("p");
+        prompt.textContent = (index + 1) + ". " + question.question;
+        card.appendChild(prompt);
+        toggleCard(card, "Show Suggested Answer", "Hide Suggested Answer",
+          (question.answer || "") + (question.explanation ? " — " + question.explanation : ""));
+        section.appendChild(card);
+      });
+
+      results.appendChild(section);
+    });
+
+    if (!results.children.length) status.textContent = "No questions were returned. Try a clearer image.";
+  }
+})();
+
+/* ---------------- Bot tabs (Solver / Quiz) ---------------- */
+(function () {
+  const chat = document.getElementById("cognio-chat");
+  const tabs = document.querySelectorAll(".cognio-tab");
+  tabs.forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      chat.setAttribute("data-mode", tab.getAttribute("data-mode"));
+      tabs.forEach(function (t) { t.classList.toggle("active", t === tab); });
+    });
+  });
+})();
+
+/* ---------------- Existing testcase tabs ---------------- */
+function switchToTab(tab) {
+  if (!tab) return;
+  document.querySelectorAll(".btab").forEach(function (item) { item.classList.remove("active"); });
+  tab.classList.add("active");
+  document.getElementById("testcase-content").style.display = "block";
 }
 
-// Wire ALL three tabs
-document.querySelectorAll('.btab').forEach(function(tab) {
-  tab.addEventListener('click', function() { switchToTab(this); });
+document.querySelectorAll(".btab").forEach(function (tab) {
+  tab.addEventListener("click", function () { switchToTab(this); });
 });
 
-// ── Two Sum judge ────────────────────────────────────────────────────────────
+/* ---------------- Demo Two Sum judge ---------------- */
 function judgeCode(code) {
-  var correct = [
-    "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        n = len(nums)\n        dict1 = {}\n        for i in range(n):\n            rem = target - nums[i]\n            if rem in dict1:\n                return [dict1[rem], i]\n            dict1[nums[i]] = i",
-    "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        n = len(nums)\n        dict1 = {}\n        for i in range(n):\n            rem = target - nums[i]\n            if rem in dict1:\n                return [dict1[rem], i]\n            dict1[nums[i]] = i\n"
-  ];
-  var trimmed = code.trim();
-  return correct.indexOf(trimmed) !== -1;
+  const normalized = code.trim().replace(/\s+$/, "");
+  return normalized.includes("def twoSum") &&
+    normalized.includes("target - nums[i]") &&
+    normalized.includes("return [dict1[rem], i]") &&
+    normalized.includes("dict1[nums[i]] = i");
 }
 
-// ── Submit result banner ─────────────────────────────────────────────────────
 function showSubmitResult(accepted) {
-  var tc = document.getElementById('testcase-content');
-  if (!tc) return;
-  // Switch to Testcase tab to show the result there
-  var testcaseTab = document.querySelector('.btab');
-  switchToTab(testcaseTab);
+  const tc = document.getElementById("testcase-content");
+  switchToTab(document.querySelector(".btab"));
+
   if (accepted) {
-    tc.innerHTML =
-      '<div style="color:var(--green);font-weight:700;font-size:15px;padding:10px 0 4px;">&#x2714; Accepted</div>' +
-      '<div style="color:var(--text2);font-size:12px;">Runtime: 52 ms &nbsp;&middot;&nbsp; Memory: 17.4 MB</div>' +
-      '<div style="color:var(--text2);font-size:12px;margin-top:2px;">Beats 87% of Python3 submissions</div>';
+    tc.textContent = "✔ Accepted — demo result. Runtime and memory values are simulated.";
+    tc.style.color = "var(--green)";
   } else {
-    tc.innerHTML =
-      '<div style="color:var(--red);font-weight:700;font-size:15px;padding:10px 0 4px;">&#x2718; Wrong Answer</div>' +
-      '<div style="color:var(--text2);font-size:12px;">Input: nums = [2,7,11,15], target = 9</div>' +
-      '<div style="color:var(--text2);font-size:12px;">Expected: [0,1]</div>' +
-      '<div style="color:var(--yellow);font-size:11px;margin-top:8px;">&#128161; Cognio is preparing a different explanation...</div>';
+    tc.textContent = "✘ Wrong Answer — this demo checks for the expected Two Sum approach.";
+    tc.style.color = "var(--red)";
   }
-  setTimeout(function() {
-    tc.innerHTML = '<span style="font-size:12px;color:var(--text2);">nums = [2,7,11,15], target = 9</span>';
+
+  setTimeout(function () {
+    tc.textContent = "nums = [2,7,11,15], target = 9";
+    tc.style.color = "var(--text2)";
   }, 5000);
 }
 
-// ── Submit button ─────────────────────────────────────────────────────────────
-document.getElementById('btn-submit-nav').addEventListener('click', function() {
-  var code = (document.getElementById('code-area').value || '').trim();
-  var accepted = judgeCode(code);
-  if (accepted) {
-    registerAttempt(true);
-    showSubmitResult(true);
-  } else {
-    registerAttempt(false);
-    showSubmitResult(false);
-    // After 800ms, fire the GPT hint — Cognio will surface it via its own widget
-    setTimeout(function() {
-      sendAdaptiveEvent(wrongStreak >= 3 ? 'HIGH' : 'MODERATE');
+document.getElementById("btn-submit-nav").addEventListener("click", function () {
+  const accepted = judgeCode(document.getElementById("code-area").value);
+  if (typeof registerAttempt === "function") registerAttempt(accepted);
+  showSubmitResult(accepted);
+
+  if (!accepted && typeof sendAdaptiveEvent === "function") {
+    setTimeout(function () {
+      sendAdaptiveEvent(typeof wrongStreak !== "undefined" && wrongStreak >= 3 ? "HIGH" : "MODERATE");
     }, 800);
   }
 });
 
-// ── Hint button ────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function() {
-  var btnHint = document.getElementById('btn-hint');
-  if (btnHint) {
-    // Remove old listener added by tracker.js and replace with one that also opens the tab
-    var newHint = btnHint.cloneNode(true);
-    btnHint.parentNode.replaceChild(newHint, btnHint);
-    newHint.addEventListener('click', function() {
-      hintsUsed += 1;
-      updateDashboard();
-      sendAdaptiveEvent('HINT_REQUESTED');
+document.getElementById("btn-run").addEventListener("click", function () {
+  document.getElementById("testcase-content").textContent =
+    "Demo mode: code execution is not connected to a Python runtime.";
+});
+
+/* Keep existing tracker.js behavior buttons working. */
+document.addEventListener("DOMContentLoaded", function () {
+  const hintButton = document.getElementById("btn-hint");
+  if (hintButton && typeof sendAdaptiveEvent === "function") {
+    const replacement = hintButton.cloneNode(true);
+    hintButton.parentNode.replaceChild(replacement, hintButton);
+    replacement.addEventListener("click", function () {
+      if (typeof hintsUsed !== "undefined") hintsUsed += 1;
+      if (typeof updateDashboard === "function") updateDashboard();
+      sendAdaptiveEvent("HINT_REQUESTED");
     });
   }
 });

@@ -1,3 +1,4 @@
+
 services:
   ml:
     build:
@@ -9,6 +10,15 @@ services:
     volumes:
       - ./ml:/app/ml
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: cognio-ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
   backend:
     build:
       context: .
@@ -16,10 +26,13 @@ services:
     container_name: cognio-backend
     depends_on:
       - ml
+      - ollama
     environment:
       ML_SERVICE_URL: http://ml:8001/ml/predict
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       DEMO_DISABLE_CACHE: ${DEMO_DISABLE_CACHE}
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_VISION_MODEL: qwen2.5vl:3b
     ports:
       - "8000:8000"
     volumes:
@@ -46,3 +59,6 @@ services:
       - ./frontend:/app/frontend
     depends_on:
       - backend
+
+volumes:
+  ollama_data:

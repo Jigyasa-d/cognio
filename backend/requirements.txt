@@ -1,10 +1,12 @@
-fastapi
-uvicorn
-openai
-joblib
-numpy
-scikit-learn
-sqlalchemy
-requests
-pydantic
-python-dotenv==1.0.1
+   fastapi
+   uvicorn
+   openai
+   joblib
+   numpy
+   scikit-learn
+   sqlalchemy
+   requests
+   httpx
+   pydantic
+   python-dotenv==1.0.1
+   python-multipart
