@@ -156,3 +156,12 @@ POST `/ml/predict`
 Cognio demonstrates how behavioral data can be transformed into actionable learning intelligence through a structured ML pipeline and real-time inference system.
 
 ---
+
+
+steps to run:
+cd /Users/jigyasa/Vscode-me/cognio
+ls
+docker compose down
+docker compose up -d --build
+
+url: http://localhost:5500/test1.html
