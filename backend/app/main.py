@@ -12,13 +12,10 @@ from app.routers import (
     retention,
     solver,
     quiz_generation,
+    learning,
 )
 
-# `app` must be created BEFORE any include_router() call.
-app = FastAPI(
-    title="Cognio Backend",
-    version="1.0.0",
-)
+app = FastAPI(title="Cognio Backend", version="1.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,9 +30,7 @@ app.include_router(adapt.router, prefix="/api/v1", tags=["adapt"])
 app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
 app.include_router(retention.router, prefix="/api/v1", tags=["retention"])
 app.include_router(solver.router, prefix="/api/v1", tags=["visual-solver"])
-
-# quiz_generation.router already has prefix="/api/v1/visual-quiz",
-# so it is included WITHOUT an extra prefix (and only once).
+app.include_router(learning.router, prefix="/api/v1", tags=["adaptive-learning"])
 app.include_router(quiz_generation.router)
 
 
