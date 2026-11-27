@@ -1,46 +1,96 @@
+
 // Cognio Chrome Extension background service worker
 
-const API_BASE = "http://localhost:8000";
+const DEFAULT_API_BASE = "http://localhost:8000";
+
+chrome.storage.local.setAccessLevel({
+  accessLevel: "TRUSTED_CONTEXTS"
+}).catch(console.error);
+
+async function getConfig() {
+  const config = await chrome.storage.local.get({
+    apiBase: DEFAULT_API_BASE,
+    accessToken: ""
+  });
+
+  const url = new URL(config.apiBase);
+
+  const local =
+    url.origin === "http://localhost:8000";
+
+  const remote =
+    url.protocol === "https:" &&
+    url.hostname.endsWith(".trycloudflare.com") &&
+    !url.port;
+
+  if (
+    (!local && !remote) ||
+    url.username ||
+    url.password ||
+    url.pathname !== "/" ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error("Invalid Cognio backend URL.");
+  }
+
+  if (!config.accessToken.trim()) {
+    throw new Error(
+      "Open Cognio extension settings and enter your access token."
+    );
+  }
+
+  return {
+    apiBase: url.origin,
+    accessToken: config.accessToken.trim()
+  };
+}
 
 // Open/close Cognio from the Chrome toolbar.
 chrome.action.onClicked.addListener(tab => {
   if (tab.id) {
-    chrome.tabs.sendMessage(tab.id, { type: "toggle" }).catch(() => {});
+    chrome.tabs.sendMessage(tab.id, {
+      type: "toggle"
+    }).catch(() => {});
   }
 });
 
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(
+  (msg, sender, sendResponse) => {
 
-  // Capture visible webpage.
-  if (msg.type === "capture") {
-    chrome.tabs.captureVisibleTab(
-      sender.tab.windowId,
-      { format: "png" }
-    )
-      .then(dataUrl => sendResponse({ ok: true, dataUrl }))
-      .catch(err => sendResponse({
-        ok: false,
-        error: String(err?.message || err)
-      }));
+    if (sender.id !== chrome.runtime.id) {
+      return false;
+    }
 
-    return true;
+    if (msg.type === "capture") {
+      chrome.tabs.captureVisibleTab(
+        sender.tab.windowId,
+        { format: "png" }
+      )
+        .then(dataUrl => sendResponse({
+          ok: true,
+          dataUrl
+        }))
+        .catch(err => sendResponse({
+          ok: false,
+          error: String(err?.message || err)
+        }));
+
+      return true;
+    }
+
+    if (msg.type === "api") {
+      callImageApi(msg).then(sendResponse);
+      return true;
+    }
+
+    if (msg.type === "jsonApi") {
+      callJsonApi(msg).then(sendResponse);
+      return true;
+    }
   }
+);
 
-  // Existing Solver and Quiz image APIs.
-  if (msg.type === "api") {
-    callImageApi(msg).then(sendResponse);
-    return true;
-  }
-
-  // New Cognio learning JSON APIs.
-  if (msg.type === "jsonApi") {
-    callJsonApi(msg).then(sendResponse);
-    return true;
-  }
-});
-
-
-// Keep the worker alive during long local vision requests.
 async function callImageApi({
   path,
   dataUrl,
@@ -62,21 +112,42 @@ async function callImageApi({
       throw new Error("Unsupported image API endpoint.");
     }
 
+    const config = await getConfig();
+
+    if (
+      typeof dataUrl !== "string" ||
+      !/^data:image\/(png|jpeg|webp);base64,/i.test(dataUrl)
+    ) {
+      throw new Error("Invalid image data.");
+    }
+
     const blob = await (await fetch(dataUrl)).blob();
+
+    if (blob.size > 10 * 1024 * 1024) {
+      throw new Error("Image must be 10 MB or smaller.");
+    }
 
     const form = new FormData();
 
-    form.append("file", blob, fileName || "image.jpg");
+    form.append("file", blob, fileName || "image.png");
 
     if (typeof question === "string") {
       form.append("question", question);
     }
-    if (path === "/api/v1/visual/solve" && typeof pageText === "string") {
+
+    if (
+      path === "/api/v1/visual/solve" &&
+      typeof pageText === "string"
+    ) {
       form.append("page_text", pageText.slice(0, 9000));
     }
 
-    const response = await fetch(API_BASE + path, {
+    const response = await fetch(config.apiBase + path, {
       method: "POST",
+      headers: {
+        "X-Cognio-Token": config.accessToken
+      },
+      redirect: "error",
       body: form
     });
 
@@ -84,7 +155,11 @@ async function callImageApi({
 
     try {
       data = await response.json();
-    } catch (_) {}
+    } catch (_) {
+      data = {
+        detail: "Backend returned an invalid response."
+      };
+    }
 
     return {
       ok: response.ok,
@@ -100,7 +175,7 @@ async function callImageApi({
       status: 0,
       data: {
         detail: error.message ||
-          "Cannot reach Cognio backend. Is Docker running?"
+          "Cannot reach Cognio backend."
       }
     };
 
@@ -109,8 +184,6 @@ async function callImageApi({
   }
 }
 
-
-// JSON communication for behavioural analysis and adaptation.
 async function callJsonApi({ path, body }) {
   const keepAlive = setInterval(() => {
     chrome.runtime.getPlatformInfo(() => {});
@@ -132,11 +205,15 @@ async function callJsonApi({ path, body }) {
       throw new Error("Invalid JSON request body.");
     }
 
-    const response = await fetch(API_BASE + path, {
+    const config = await getConfig();
+
+    const response = await fetch(config.apiBase + path, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "X-Cognio-Token": config.accessToken
       },
+      redirect: "error",
       body: JSON.stringify(body)
     });
 
@@ -144,10 +221,10 @@ async function callJsonApi({ path, body }) {
 
     try {
       data = await response.json();
-    } catch (_) {}
-
-    if (!response.ok) {
-      console.error("Cognio learning API error:", response.status, data);
+    } catch (_) {
+      data = {
+        detail: "Backend returned an invalid response."
+      };
     }
 
     return {

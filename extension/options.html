@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cognio Settings</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #101014;
+      color: #f4f4f5;
+      font-family: Arial, sans-serif;
+      padding: 40px 20px;
+      margin: 0;
+    }
+
+    .card {
+      max-width: 520px;
+      margin: auto;
+      padding: 30px;
+      background: #19191f;
+      border: 1px solid #303039;
+      border-radius: 18px;
+    }
+
+    h1 {
+      color: #ffa116;
+      margin: 0 0 10px;
+    }
+
+    p {
+      color: #a1a1aa;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      margin: 22px 0 8px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 13px;
+      border-radius: 9px;
+      border: 1px solid #3f3f46;
+      background: #101014;
+      color: white;
+      font-size: 14px;
+    }
+
+    button {
+      padding: 12px 16px;
+      border: none;
+      border-radius: 9px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    #save {
+      background: #ffa116;
+      color: #111;
+    }
+
+    #test {
+      background: #303039;
+      color: white;
+      margin-left: 8px;
+    }
+
+    #status {
+      min-height: 22px;
+      margin-top: 18px;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .notice {
+      border-top: 1px solid #303039;
+      margin-top: 24px;
+      padding-top: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>✦ Cognio</h1>
+    <p>Adaptive learning companion · Beta settings</p>
+
+    <label for="mode">Connection mode</label>
+    <select id="mode">
+      <option value="local">Local development</option>
+      <option value="remote">Remote beta</option>
+    </select>
+
+    <label for="apiBase">Backend URL</label>
+    <input
+      id="apiBase"
+      type="url"
+      placeholder="https://your-tunnel.trycloudflare.com"
+    >
+
+    <label for="accessToken">Beta access token</label>
+    <input
+      id="accessToken"
+      type="password"
+      autocomplete="off"
+      placeholder="Enter your private access token"
+    >
+
+    <button id="save">Save settings</button>
+    <button id="test">Test connection</button>
+
+    <div id="status" role="status"></div>
+
+    <div class="notice">
+      <p>
+        Remote mode sends learning interaction data and
+        requested screenshots or page content to the
+        configured Cognio backend.
+        AI features may use external AI services.
+        Avoid submitting private or sensitive information.
+      </p>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
