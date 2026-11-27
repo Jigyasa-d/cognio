@@ -17,3 +17,5 @@ ml/models/
 ml/reports/
 node_modules/.env
 .env
+
+.DS_Store

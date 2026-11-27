@@ -1,3 +1,4 @@
+
 services:
   ml:
     build:
@@ -5,7 +6,7 @@ services:
       dockerfile: ml/Dockerfile
     container_name: cognio-ml
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
     volumes:
       - ./ml:/app/ml
 
@@ -22,8 +23,9 @@ services:
       DEMO_DISABLE_CACHE: ${DEMO_DISABLE_CACHE}
       OLLAMA_BASE_URL: http://host.docker.internal:11434
       OLLAMA_VISION_MODEL: qwen2.5vl:3b
+      COGNIO_BETA_TOKEN: ${COGNIO_BETA_TOKEN:?Set COGNIO_BETA_TOKEN in .env}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./backend:/app/backend
 
@@ -43,7 +45,7 @@ services:
     working_dir: /app/frontend
     command: python -m http.server 5500 --bind 0.0.0.0
     ports:
-      - "5500:5500"
+      - "127.0.0.1:5500:5500"
     volumes:
       - ./frontend:/app/frontend
     depends_on:
